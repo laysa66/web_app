@@ -1,0 +1,29 @@
+from setuptools import find_packages, setup
+
+setup(
+    name='webapp',
+    version='1.0.0',
+    packages=find_packages(),
+    include_package_data=True,
+    zip_safe=False,
+    install_requires=[
+        'flask',
+        'bcrypt',
+        'click',
+        'Flask',
+        'Flask-Bcrypt',
+        'Flask-Login',
+        'Flask-SQLAlchemy',
+        'Flask-WTF',
+        'greenlet',
+        'importlib-metadata',
+        'itsdangerous',
+        'Jinja2',
+        'MarkupSafe',
+        'SQLAlchemy',
+        'typing_extensions',
+        'Werkzeug',
+        'WTForms',
+        'zipp'
+    ],
+)

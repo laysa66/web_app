@@ -1,0 +1,99 @@
+<!-- page de creation de question -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mes questions </title>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"  crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+    <!-- HLJS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <!-- Marked -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@3.0.7/marked.min.js"></script>
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.css" integrity="sha384-vKruj+a13U8yHIkAyGgK1J3ArTLzrFGBbBc0tDp4ad/EyewESeXE/Iv67Aj8gKZ0" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.4/dist/katex.min.js" integrity="sha384-PwRUT/YqbnEjkZO0zZxNqcxACrXe+j766U2amXcgMg5457rve2Y7I6ZJSm2A0mS4" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/+DiW/UqRcLbRjq" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css" integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/+DiW/UqRcLbRjq" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js" integrity="sha384-y23I5Q6l+B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd+qj+o24G5ZU2zJz" crossorigin="anonymous"></script>
+    <!-- Mermaid -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.2/styles/atom-one-dark.min.css">
+    <script>mermaid.initialize({startOnLoad:true});</script>
+    <!-- JS -->
+    <script src="{{ url_for('static', filename='js/question.js') }}"></script>
+    <!-- css -->
+    <style>
+        #error {
+            color: #df2359;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+        }
+        #menu{
+            color: #333;
+            font-size: 30px;
+            margin: 5px;
+        }
+        #menu:hover{
+            color: #6fc9ff;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+ <a id="menu" title="Revenir au menu principal" href="{{ url_for('accueil') }}"><i class="fa-solid fa-house-user"></i></a>
+
+ <div class="container">
+        <form method="POST" action="" class="mx-auto w-50">
+            {{ form.csrf_token }}
+            <div class="form-group">
+                <label for="question">Question :</label>
+                {{ form.question() }}
+            </div>
+            <div id="preview"></div>
+            <button class="btn btn-primary" id="btn-preview" type="button" onclick="previewQuestion()">Aperçu</button>
+            <br>
+            <div id="answers">
+                <div class="form-group">
+                    <label for="answer1">Réponse 1:</label>
+                    {{ form.answer1() }}
+                    <div class="form-check">
+                        {{ form.correct1() }}
+                        <label class="form-check-label">Réponse correcte</label>
+                    </div>
+                    <label for="answer2">Réponse 2:</label>
+                    {{ form.answer2() }}
+                    <div class="form-check">
+                        {{ form.correct2() }}
+                        <label class="form-check-label">Réponse correcte</label>
+                    </div>
+                    <label for="answer3">Réponse 3:</label>
+                    {{ form.answer3() }}
+                    <div class="form-check">
+                        {{ form.correct3() }}
+                        <label class="form-check-label">Réponse correcte</label>
+                    </div>
+                    <label for="answer4">Réponse 4:</label>
+                    {{ form.answer4() }}
+                    <div class="form-check">
+                        {{ form.correct4() }}
+                        <label class="form-check-label">Réponse correcte</label>
+                    </div>
+                </div>
+            </div>
+            {{ form.submit() }}
+            <p id="error">{{ error }}</p>
+        </form>
+    </div>
+</body>
+
+</html>
