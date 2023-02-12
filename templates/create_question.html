@@ -30,23 +30,7 @@
     <!-- JS -->
     <script src="{{ url_for('static', filename='js/question.js') }}"></script>
     <!-- css -->
-    <style>
-        #error {
-            color: #df2359;
-            font-weight: bold;
-            text-align: center;
-            margin-top: 10px;
-        }
-        #menu{
-            color: #333;
-            font-size: 30px;
-            margin: 5px;
-        }
-        #menu:hover{
-            color: #6fc9ff;
-            cursor: pointer;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/createquestion.css') }}">
 </head>
 
 <body>
@@ -94,6 +78,16 @@
             <p id="error">{{ error }}</p>
         </form>
     </div>
+    <!-- add the tags -->
+    <div class="container">
+       <div class="tag-container">
+
+
+        <input type="text" class="input" placeholder="Add tag">
+
+    </div>
+    </div>
+
 </body>
 
 </html>

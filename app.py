@@ -1,12 +1,16 @@
 import json
-from flask import Flask, render_template, url_for, redirect, jsonify
+from flask import Flask, render_template, url_for, redirect, jsonify, request, flash ,session
 from flask_bcrypt import Bcrypt
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from flask_sqlalchemy import SQLAlchemy
-from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, TextAreaField, BooleanField
-from wtforms.validators import InputRequired, Length
-
+from flask_wtf import FlaskForm, Form
+from wtforms import StringField, PasswordField, SubmitField, TextAreaField, BooleanField, SelectField
+from werkzeug.utils import secure_filename
+from wtforms.validators import InputRequired, Length, ValidationError
+from flask_change_password import ChangePassword, ChangePasswordForm, SetPasswordForm
+from datetime import datetime
+import os
+import pandas as pd
 # utilisation du FLASK_LOGIN: https://flask-login.readthedocs.io/en/latest/
 # creation de la base de donnees LOCALE avec SQLALCHEMY: https://flask-sqlalchemy.palletsprojects.com/en/2.x/quickstart/
 #la difference entre SQLALCHEMY et SQLITE3: SQLAlchemy est une bibliothèque de mappage objet-relationnel pour Python qui
@@ -18,9 +22,14 @@ from wtforms.validators import InputRequired, Length
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///passeword.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'thisisasecretkey'
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
+app.secret_key = os.urandom(20)
+flask_change_password = ChangePassword(min_password_length=10, rules=dict(long_password_override=2))
+flask_change_password.init_app(app)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -37,7 +46,8 @@ class User(db.Model, UserMixin):  # table base de données
     username = db.Column(db.String(20), nullable=False, unique=True)
     first_name = db.Column(db.String(150), nullable=False)
     last_name = db.Column(db.String(150), nullable=False)
-    password = db.Column(db.String(255), nullable=False)
+    password = db.Column(db.Integer, nullable=False)
+    type_user = db.Column(db.String(255), nullable=False)
 
 
 class Question(db.Model, UserMixin):  # table base de données
@@ -50,6 +60,9 @@ class Question(db.Model, UserMixin):  # table base de données
 # utilisation de flask login pour la connexion et la déconnexion d'un utilisateur
 # ICI pour plus d'informations : https://youtu.be/71EU8gnZqZQ
 
+
+
+
 class RegisterForm(FlaskForm):
     username = StringField(validators=[InputRequired(), Length(min=4, max=20)],
                            render_kw={"placeholder": "Pseudonyme", "id": "username"})
@@ -59,6 +72,9 @@ class RegisterForm(FlaskForm):
                            render_kw={"placeholder": "Prénom", "id": "lastname"})
     password = PasswordField(validators=[InputRequired(), Length(min=8, max=20)],
                              render_kw={"placeholder": "Mot de passe", "id": "password"})
+    select_type_user = SelectField('Type d\'utilisateur', choices=[('teacher', 'Professeur'), ('student', 'Etudiant')],
+                                   validators=[InputRequired()], render_kw={"id": "usertype"})
+
     submit = SubmitField('Register')
 
     # fonction pour verifier si le nom d'utilisateur existe deja dans la base de donnees ou non (pour l'inscription)
@@ -117,11 +133,19 @@ class LoginForm(FlaskForm):
 @login_required
 # route pour aller a la page d'accueil
 def accueil():
+    #if current_user.type_user != 'teacher':
+        #return render_template('etudiant.html', user=current_user)
     return render_template('accueil.html', user=current_user)
 
 # route pour aller a la page de connexion (login) et  verifier si le nom d'utilisateur
 # et le mot de passe sont corrects,  si oui, on va a la page d'accueil
-
+@app.route('/accueil2', methods=['GET', 'POST'])
+def accueil2():
+    return render_template('accueil2.html', user=current_user)
+app.route('/next', methods=['GET', 'POST'])
+def next():
+    return render_template('accueil2.html'
+                           )
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -132,8 +156,15 @@ def login():
         if user:
             if bcrypt.check_password_hash(user.password, form.password.data):
                 login_user(user)
-                return redirect(url_for("accueil"))
+                if current_user.type_user == 'teacher':
+                    return redirect(url_for('accueil'))
+                else:
+                    return redirect(url_for('etudiant'))
     return render_template('login.html', form=form)
+@app.route('/etudiant ', methods=['GET', 'POST'])
+def etudiant():
+    return render_template('etudiant.html', user=current_user)
+
 
 # route pour aller a la page de deconnexion (logout) et  deconnecter l'utilisateur
 @app.route('/logout', methods=['GET', 'POST'])
@@ -141,6 +172,13 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for('login'))
+@app.route('/next', methods=['GET', 'POST'])
+def next():
+    return redirect(url_for('accueil2'))
+@app.route('/back', methods=['GET', 'POST'])
+def back():
+    return redirect(url_for('accueil'))
+
 
 # route pour aller a la page d'inscription (register)
 @app.route('/register', methods=['GET', 'POST'])
@@ -152,7 +190,7 @@ def register():
     if form.validate_on_submit():
         hashed_password = bcrypt.generate_password_hash(form.password.data)
         new_user = User(username=form.username.data, password=hashed_password, first_name=form.firstname.data,
-                        last_name=form.lastname.data)
+                        last_name=form.lastname.data, type_user=form.select_type_user.data)
         try:
             if form.validate_username(form.username):
                 return render_template('register.html', form=form, error="Pseudunyme déjà utilisé")
@@ -283,6 +321,100 @@ def getAnswers(answers):
         all_answers.append(answer["reponse"])
     return all_answers
 
+#csv part
+ALLOWED_EXTENSIONS = set(['csv'])
+def allowed_file(filename):# the filename contains the csv extension
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+@app.route('/upload', methods=['GET','POST'])
+def upload_file():
+    if request.method == 'POST':
+        file=request.files['file']
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            new_filename= f'{filename.split(".")[0]}_{str(datetime.now())}.csv'
+            file.save(os.path.join('input', new_filename))
+        return redirect(url_for('upload_file'))
+    return render_template('upload.html')
+@app.route('/accueilEtudiant')
+def accueilEtudiant():
+    return render_template('accueilEtudiant.html')
+
+@app.route('/dashbordEtudiant',methods=['GET', 'POST'])
+@login_required
+def dashbordEtudiant():
+    return render_template('dashbordEtudiant.html')
+
+@app.route('/loginEtudiant',methods=['GET', 'POST'])
+def loginEtudiant():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user=User.query.filter_by(username=form.username.data).first()
+        if user:
+            if bcrypt.check_password_hash(user.password,form.password.data):
+                login_user(user)
+                return redirect(url_for('dashbordEtudiant'))
+    return render_template('loginEtudiant.html',form=form)
+
+
+def logoutEtudiant_user():
+    pass
+
+
+@app.route('/logoutEtudiant', methods=['GET', 'POST'])
+@login_required
+def logoutEtudiant():
+    logout_user()
+    return redirect(url_for('loginEtudiant'))
+
+@app.route('/registerEtudiant', methods=['GET', 'POST'])
+def registerEtudiant():
+    # si l'utilisateur est connecté on le redirige vers la page dashboard
+    if current_user.is_authenticated:
+        return redirect(url_for('accueilEtudiant'))
+    form = RegisterForm()
+    if form.validate_on_submit():
+        hashed_password = bcrypt.generate_password_hash(form.password.data)
+        new_user = User(username=form.username.data, password=hashed_password, first_name=form.firstname.data,
+                        last_name=form.lastname.data)
+        try:
+            if form.validate_username(form.username):
+                return render_template('registerEtudiant.html', form=form, error="Pseudunyme déjà utilisé")
+            db.session.add(new_user)
+            db.session.commit()
+        except Exception as e:
+            print(e)
+            return "Il y a eu un problème lors de l'inscription"
+        return redirect(url_for('login'))
+
+    return render_template('registerEtudiant.html', form=form, error="")
+
+
+@app.route('/ChangePassword', methods=["GET", "POST"])
+def ChangePassword():
+    if request.method == "POST":
+        username = request.form['username']
+        newPassword = request.form['newpassword']
+        user = User.query.filter_by(username=username).first()
+        if user:
+            user.password = newPassword
+            db.session.commit()
+            msg = "Changed successfully"
+            flash('Changed successfully.', 'success')
+            return render_template("ChangePassword.html", success=msg)
+        else:
+            error = "Username not found"
+            return render_template("ChangePassword.html", error=error)
+    return render_template("ChangePassword.html")
+
+
+@app.route('/examCode', methods=['POST'])
+def examCode():
+    exam_code = request.form['exam_code']
+    return render_template('examCode.html', exam_code=exam_code)
+
+#df = pd.read_csv('input/ ')
+#df.to_sql('users',con=db.engine, if_exists='append', index=False)
 
 if __name__ == "__main__":
     with app.app_context():

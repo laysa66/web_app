@@ -74,4 +74,27 @@ function backToEdit() { // Fonction qui permet de revenir à l'édition de la qu
     document.getElementById("btn-preview").innerText = "Aperçu"; // Modification du texte du bouton
     document.getElementById("btn-preview").setAttribute("onclick", "previewQuestion()"); // Modification de la fonction du bouton
 }
+// tags partie
+const tagContainer = document.querySelector('.tag-container');
+const input = document.querySelector('.tag-container input');
 
+function createTag(label) {
+    const div = document.createElement('div');
+    div.setAttribute('class', 'tag');
+    const span = document.createElement('span');
+    span.innerHTML = label;
+    const closeIcon = document.createElement('i');
+    closeIcon.setAttribute('class', 'material-icons');
+    closeIcon.innerHTML = 'close';
+    div.appendChild(span);
+    div.appendChild(closeIcon);
+    return div;
+}
+
+input.addEventListener('keyup', function(e) {
+    if (e.key === 'Enter') {
+        const tag = createTag(input.value);
+        tagContainer.prepend(tag);
+        input.value="";
+    }
+}

@@ -1,8 +1,8 @@
 body {
-background: #6C63FF;
-background-repeat: no-repeat;
-background-size: cover;
-background-position: center;
+    background: #6C63FF;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
 
 }
 .row {
@@ -52,9 +52,4 @@ img {
 }
 #logout :hover {
     color : #FFFFFF;
-}
-#next{
-    color : darkred;
-    font-size : 200%;
-
 }
