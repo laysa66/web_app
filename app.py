@@ -1,11 +1,16 @@
+import csv
+import os
 import json
-from flask import Flask, render_template, url_for, redirect, jsonify
+
+from flask import Flask, render_template, url_for, redirect, jsonify,flash,session,request
 from flask_bcrypt import Bcrypt
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 from flask_sqlalchemy import SQLAlchemy
-from flask_wtf import FlaskForm
+from flask_wtf import FlaskForm,Form
 from wtforms import StringField, PasswordField, SubmitField, TextAreaField, BooleanField
-from wtforms.validators import InputRequired, Length
+from wtforms.validators import InputRequired, Length,ValidationError
+from flask_change_password import ChangePassword, ChangePasswordForm, SetPasswordForm
+
 
 # utilisation du FLASK_LOGIN: https://flask-login.readthedocs.io/en/latest/
 # creation de la base de donnees LOCALE avec SQLALCHEMY: https://flask-sqlalchemy.palletsprojects.com/en/2.x/quickstart/
@@ -18,9 +23,15 @@ from wtforms.validators import InputRequired, Length
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///passwords.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'thisisasecretkey'
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
+app.secret_key = os.urandom(20)
+flask_change_password = ChangePassword(min_password_length=10, rules=dict(long_password_override=2))
+flask_change_password.init_app(app)
+
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -283,6 +294,82 @@ def getAnswers(answers):
         all_answers.append(answer["reponse"])
     return all_answers
 
+@app.route('/accueilEtudiant')
+def accueilEtudiant():
+    return render_template('accueilEtudiant.html')
+
+@app.route('/dashbordEtudiant',methods=['GET', 'POST'])
+@login_required
+def dashbordEtudiant():
+    return render_template('dashbordEtudiant.html')
+
+@app.route('/loginEtudiant',methods=['GET', 'POST'])
+def loginEtudiant():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user=User.query.filter_by(username=form.username.data).first()
+        if user:
+            if bcrypt.check_password_hash(user.password,form.password.data):
+                login_user(user)
+                return redirect(url_for('dashbordEtudiant'))
+    return render_template('loginEtudiant.html',form=form)
+
+
+def logoutEtudiant_user():
+    pass
+
+
+@app.route('/logoutEtudiant', methods=['GET', 'POST'])
+@login_required
+def logoutEtudiant():
+    logout_user()
+    return redirect(url_for('loginEtudiant'))
+
+@app.route('/registerEtudiant', methods=['GET', 'POST'])
+def registerEtudiant():
+    # si l'utilisateur est connecté on le redirige vers la page dashboard
+    if current_user.is_authenticated:
+        return redirect(url_for('accueilEtudiant'))
+    form = RegisterForm()
+    if form.validate_on_submit():
+        hashed_password = bcrypt.generate_password_hash(form.password.data)
+        new_user = User(username=form.username.data, password=hashed_password, first_name=form.firstname.data,
+                        last_name=form.lastname.data)
+        try:
+            if form.validate_username(form.username):
+                return render_template('registerEtudiant.html', form=form, error="Pseudunyme déjà utilisé")
+            db.session.add(new_user)
+            db.session.commit()
+        except Exception as e:
+            print(e)
+            return "Il y a eu un problème lors de l'inscription"
+        return redirect(url_for('login'))
+
+    return render_template('registerEtudiant.html', form=form, error="")
+
+
+@app.route('/ChangePassword', methods=["GET", "POST"])
+def ChangePassword():
+    if request.method == "POST":
+        username = request.form['username']
+        newPassword = request.form['newpassword']
+        user = User.query.filter_by(username=username).first()
+        if user:
+            user.password = newPassword
+            db.session.commit()
+            msg = "Changed successfully"
+            flash('Changed successfully.', 'success')
+            return render_template("ChangePassword.html", success=msg)
+        else:
+            error = "Username not found"
+            return render_template("ChangePassword.html", error=error)
+    return render_template("ChangePassword.html")
+
+
+@app.route('/examCode', methods=['POST'])
+def examCode():
+    exam_code = request.form['exam_code']
+    return render_template('examCode.html', exam_code=exam_code)
 
 if __name__ == "__main__":
     with app.app_context():
