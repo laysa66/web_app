@@ -1,4 +1,4 @@
-//creer et modifier questions
+
 window.onload = function () { // Quand la page est chargée
     document.getElementById("question").addEventListener("keydown", function (e) { // Gestion de l'indentation avec la touche tab de la zone de texte
         if (e.key === "Tab") { // Si la touche appuyée est la touche tab on ajoute une tabulation
@@ -20,30 +20,20 @@ function previewQuestion() { // Fonction qui permet de prévisualiser la questio
     console.log("question: ", question);
     var preview = document.getElementById("preview"); // Récupération de la div qui contient la prévisualisation
     const renderer = new marked.Renderer(); // Création d'un nouveau renderer
-
-    renderer.text = function (text) { // Fonction qui permet de gérer le rendu des $$...$$ et des $...$
+    renderer.text = function (text) { // Fonction qui permet de gérer le rendu des textes latex
         try {
-            text = text.replace(/\$\$([^$]+)\$\$/g, function(match, p1) { // Fonction qui permet de gérer le rendu des $$...$$
-                return katex.renderToString(p1, {displayMode: true});
-            });
-            text = text.replace(/\$([^$]+)\$/g, function(match, p1) { // Fonction qui permet de gérer le rendu des $...$
-                return katex.renderToString(p1);
-            });
-            return text;
+            return katex.renderToString(text);
         }
         catch (e) {
             return text;
         }
     };
-
-
-
     console.log("renderer 1: ", renderer);
     renderer.code = function (code, language) { // Fonction qui permet de gérer le rendu des codes mermaid et des codes classiques
         if (language == "mermaid") {
             return `<div class="mermaid">${code}</div>`;
         }
-        return `<pre><code class="hljs ${language}">${hljs.highlightAuto(code).value}</code></pre>`;
+        return `<pre><code class="hljs ${language}">${code}</code></pre>`;
     };
     console.log("renderer 2: ", renderer);
     marked.setOptions({
@@ -54,12 +44,7 @@ function previewQuestion() { // Fonction qui permet de prévisualiser la questio
             if (language == "mermaid") {
                 return code;
             }
-            else if (language) {
-                return hljs.highlight(code, {language: language}).value;
-            }
-            else {
-                return hljs.highlightAuto(code).value;
-            }
+            return hljs.highlightAuto(code).value;
         }
     });
     preview.innerHTML = marked(question);
