@@ -1,3 +1,4 @@
+<!-- page pour voir toutes les questions des utilisateurs -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -22,6 +23,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
     <!-- Mermaid -->
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.2/styles/atom-one-dark.min.css">
     <script>mermaid.initialize({startOnLoad:true});</script>
     <title>Mes questions </title>
     <script src="{{ url_for('static', filename='js/previewQ.js') }}"></script>
@@ -32,7 +34,7 @@
     <a id="menu" title="Revenir au menu principal" href="{{ url_for('accueil') }}"><i class="fa-solid fa-house-user"></i></a>
     <h1 id="qtitle">Questions :</h1>
     {% if questions|length == 0 %}
-        <p id="noqerr"> Aucune question n'est crée pour le moment, cliquez ici <a href="{{ url_for('create_question') }}">créer</a> pour en ajouter une dans le système </p>
+        <p id="noqerr"> Aucune question n'est crée pour le moment, cliquez ici <a href="{{ url_for('create_question') }}">créer</a> pour en ajouter une dans le système </p> <!-- Si aucune question n'est crée il le remet a la page pour creer une question -->
     {% endif %}
     {% for question in questions %}
         <div class="question">
@@ -57,7 +59,7 @@
         <br>
 
     {% endfor %}
-
+<!-- pour afficher les questions en bon format -->
     <script>
         previewQuestion()
     </script>

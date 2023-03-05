@@ -1,4 +1,5 @@
 //on dom load with js not jquery
+// parcourir les questions et les afficher : page all questions et my questions
 window.onload = function() {
     const id = window.location.hash.split('-')[1]
     if (id) {
@@ -15,31 +16,45 @@ function previewQuestion() { // Fonction qui permet de prévisualiser la questio
         let question = questionI.getElementsByClassName("question_txt")[0].innerHTML; // Récupération de la question
         let preview = questionI.getElementsByClassName("preview")[0]; // Récupération de la div qui contient la prévisualisation
         const renderer = new marked.Renderer(); // Création d'un nouveau renderer
-        renderer.text = function (text) { // Fonction qui permet de gérer le rendu des textes latex
+
+        renderer.text = function (text) { // Fonction qui permet de gérer le rendu des $$...$$ et des $...$
             try {
-                return katex.renderToString(text);
+                text = text.replace(/\$\$([^$]+)\$\$/g, function(match, p1) { // Fonction qui permet de gérer le rendu des $$...$$
+                    return katex.renderToString(p1, {displayMode: true});
+                });
+                text = text.replace(/\$([^$]+)\$/g, function(match, p1) { // Fonction qui permet de gérer le rendu des $...$
+                    return katex.renderToString(p1);
+                });
+                return text;
             }
             catch (e) {
                 return text;
             }
-        }
+        };
+
         renderer.code = function (code, language) { // Fonction qui permet de gérer le rendu des codes mermaid et des codes classiques
-            if (language === "mermaid") {
+            if (language == "mermaid") {
                 return `<div class="mermaid">${code}</div>`;
             }
-            return `<pre><code class="hljs ${language}">${code}</code></pre>`;
-        }
+            return `<pre><code class="hljs ${language}">${hljs.highlightAuto(code).value}</code></pre>`;
+        };
+
         marked.setOptions({
             renderer: renderer,
             gfm: true,
             breaks: true,
             highlight: function (code, language) {
-                if (language === "mermaid") {
+                if (language == "mermaid") {
                     return code;
                 }
-                return hljs.highlightAuto(code).value;
+                else if (language) {
+                    return hljs.highlight(code, {language: language}).value;
+                }
+                else {
+                    return hljs.highlightAuto(code).value;
+                }
             }
-        })
+        });
         preview.innerHTML = marked(question);
         mermaid.init();
         questionI.getElementsByClassName("question_txt")[0].style.display = "none"; // Masquage de la div qui contient la question
