@@ -11,6 +11,7 @@ from flask_change_password import ChangePassword, ChangePasswordForm, SetPasswor
 from datetime import datetime
 import os
 import pandas as pd
+import csv
 # utilisation du FLASK_LOGIN: https://flask-login.readthedocs.io/en/latest/
 # creation de la base de donnees LOCALE avec SQLALCHEMY: https://flask-sqlalchemy.palletsprojects.com/en/2.x/quickstart/
 #la difference entre SQLALCHEMY et SQLITE3: SQLAlchemy est une bibliothèque de mappage objet-relationnel pour Python qui
@@ -22,7 +23,7 @@ import pandas as pd
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///passeword.db'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'thisisasecretkey'
 db = SQLAlchemy(app)
@@ -336,15 +337,16 @@ def upload_file():
             file.save(os.path.join('input', new_filename))
         return redirect(url_for('upload_file'))
     return render_template('upload.html')
-@app.route('/accueilEtudiant')
-def accueilEtudiant():
-    return render_template('accueilEtudiant.html')
 
-@app.route('/dashbordEtudiant',methods=['GET', 'POST'])
-@login_required
-def dashbordEtudiant():
-    return render_template('dashbordEtudiant.html')
+with open ('input/etudiant.csv') as csvfile:
+    reader = csv.DictReader(csvfile)
+    for row in reader:
+        etudiant = User(username=row['username'],first_name=row['firstname'],lastname=row['lastname'] , password=row['password'], select_type_user=row['select_type_user'])
+        db.session.add(etudiant)
+    db.session.commit()
 
+
+#partie de mahmoud
 @app.route('/loginEtudiant',methods=['GET', 'POST'])
 def loginEtudiant():
     form = LoginForm()
@@ -357,38 +359,6 @@ def loginEtudiant():
     return render_template('loginEtudiant.html',form=form)
 
 
-def logoutEtudiant_user():
-    pass
-
-
-@app.route('/logoutEtudiant', methods=['GET', 'POST'])
-@login_required
-def logoutEtudiant():
-    logout_user()
-    return redirect(url_for('loginEtudiant'))
-
-@app.route('/registerEtudiant', methods=['GET', 'POST'])
-def registerEtudiant():
-    # si l'utilisateur est connecté on le redirige vers la page dashboard
-    if current_user.is_authenticated:
-        return redirect(url_for('accueilEtudiant'))
-    form = RegisterForm()
-    if form.validate_on_submit():
-        hashed_password = bcrypt.generate_password_hash(form.password.data)
-        new_user = User(username=form.username.data, password=hashed_password, first_name=form.firstname.data,
-                        last_name=form.lastname.data)
-        try:
-            if form.validate_username(form.username):
-                return render_template('registerEtudiant.html', form=form, error="Pseudunyme déjà utilisé")
-            db.session.add(new_user)
-            db.session.commit()
-        except Exception as e:
-            print(e)
-            return "Il y a eu un problème lors de l'inscription"
-        return redirect(url_for('login'))
-
-    return render_template('registerEtudiant.html', form=form, error="")
-
 
 @app.route('/ChangePassword', methods=["GET", "POST"])
 def ChangePassword():
@@ -400,7 +370,7 @@ def ChangePassword():
             user.password = newPassword
             db.session.commit()
             msg = "Changed successfully"
-            flash('Changed successfully.', 'success')
+            alert('Changed successfully.', 'success')
             return render_template("ChangePassword.html", success=msg)
         else:
             error = "Username not found"
@@ -413,8 +383,7 @@ def examCode():
     exam_code = request.form['exam_code']
     return render_template('examCode.html', exam_code=exam_code)
 
-#df = pd.read_csv('input/ ')
-#df.to_sql('users',con=db.engine, if_exists='append', index=False)
+
 
 if __name__ == "__main__":
     with app.app_context():
