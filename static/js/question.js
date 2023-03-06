@@ -23,10 +23,10 @@ function previewQuestion() { // Fonction qui permet de prévisualiser la questio
 
     renderer.text = function (text) { // Fonction qui permet de gérer le rendu des $$...$$ et des $...$
         try {
-            text = text.replace(/\$\$([^$]+)\$\$/g, function(match, p1) { // Fonction qui permet de gérer le rendu des $$...$$
-                return katex.renderToString(p1, {displayMode: true});
+            text = text.replace(/\$\$([^$]+)\$\$/g, function (match, p1) { // Fonction qui permet de gérer le rendu des $$...$$
+                return katex.renderToString(p1, { displayMode: true });
             });
-            text = text.replace(/\$([^$]+)\$/g, function(match, p1) { // Fonction qui permet de gérer le rendu des $...$
+            text = text.replace(/\$([^$]+)\$/g, function (match, p1) { // Fonction qui permet de gérer le rendu des $...$
                 return katex.renderToString(p1);
             });
             return text;
@@ -35,17 +35,23 @@ function previewQuestion() { // Fonction qui permet de prévisualiser la questio
             return text;
         }
     };
-
-
-
     console.log("renderer 1: ", renderer);
     renderer.code = function (code, language) { // Fonction qui permet de gérer le rendu des codes mermaid et des codes classiques
         if (language == "mermaid") {
             return `<div class="mermaid">${code}</div>`;
         }
-        return `<pre><code class="hljs ${language}">${hljs.highlightAuto(code).value}</code></pre>`;
+        else {
+            return `<pre><code class="hljs ${language}">${hljs.highlightAuto(code).value}</code></pre>`;
+        }
     };
     console.log("renderer 2: ", renderer);
+    if (hljs && hljs.highlightAuto) {
+        console.log("hljs library is loaded");
+    } else {
+        console.log("hljs library is not loaded");
+    }
+
+
     marked.setOptions({
         renderer: renderer,
         gfm: true,
@@ -55,7 +61,7 @@ function previewQuestion() { // Fonction qui permet de prévisualiser la questio
                 return code;
             }
             else if (language) {
-                return hljs.highlight(code, {language: language}).value;
+                return hljs.highlight(code, { language: language }).value;
             }
             else {
                 return hljs.highlightAuto(code).value;
