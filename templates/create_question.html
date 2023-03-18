@@ -26,7 +26,11 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.2/styles/atom-one-dark.min.css">
-    <script>mermaid.initialize({startOnLoad:true});</script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script>
+        mermaid.initialize({startOnLoad:true});
+    </script>
     <!-- JS -->
     <script src="{{ url_for('static', filename='js/question.js') }}"></script>
     <!-- css -->
@@ -72,21 +76,25 @@
                         {{ form.correct4() }}
                         <label class="form-check-label">Réponse correcte</label>
                     </div>
+                    <select id="tags" class="form-control" multiple="multiple"></select>
                 </div>
             </div>
             {{ form.submit() }}
             <p id="error">{{ error }}</p>
         </form>
-    </div>
+     <script>
+         const selectVals = ()=>{
+             console.log($('#tags').val())
+         }
+     </script>
+     <button onclick="selectVals()"> test </button>
+ </div>
     <!-- add the tags -->
-    <div class="container">
-       <div class="tag-container">
-
-
-        <input type="text" class="input" placeholder="Add tag">
-
-    </div>
-    </div>
+<!--    <div class="container">-->
+<!--       <div class="tag-container">-->
+<!--            <input type="text" class="input" placeholder="Add tag">-->
+<!--       </div>-->
+<!--    </div>-->
 
 </body>
 

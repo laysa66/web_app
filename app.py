@@ -12,6 +12,7 @@ from datetime import datetime
 import os
 import pandas as pd
 import csv
+import random, string
 # utilisation du FLASK_LOGIN: https://flask-login.readthedocs.io/en/latest/
 # creation de la base de donnees LOCALE avec SQLALCHEMY: https://flask-sqlalchemy.palletsprojects.com/en/2.x/quickstart/
 #la difference entre SQLALCHEMY et SQLITE3: SQLAlchemy est une bibliothèque de mappage objet-relationnel pour Python qui
@@ -338,12 +339,12 @@ def upload_file():
         return redirect(url_for('upload_file'))
     return render_template('upload.html')
 
-with open ('input/etudiant.csv') as csvfile:
-    reader = csv.DictReader(csvfile)
-    for row in reader:
-        etudiant = User(username=row['username'],first_name=row['firstname'],lastname=row['lastname'] , password=row['password'], select_type_user=row['select_type_user'])
-        db.session.add(etudiant)
-    db.session.commit()
+    with open ('input/etudiant.csv') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            etudiant = User(username=row['username'],first_name=row['firstname'],lastname=row['lastname'] , password=row['password'], select_type_user=row['select_type_user'])
+            db.session.add(etudiant)
+        db.session.commit()
 
 
 #partie de mahmoud
@@ -386,6 +387,8 @@ def examCode():
 
 
 if __name__ == "__main__":
+    #''.join(random.choices(string.ascii_letters + string.digits, k=16))
+
     with app.app_context():
         db.create_all()
     app.run(debug=True, port=5005)

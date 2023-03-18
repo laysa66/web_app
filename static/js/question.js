@@ -9,6 +9,10 @@ window.onload = function () { // Quand la page est chargée
             this.selectionStart = this.selectionEnd = start + 1;
         }
     });
+    $("#tags").select2({
+        tags: true,
+        tokenSeparators: [',', ' ']
+    })
 };
 
 function previewQuestion() { // Fonction qui permet de prévisualiser la question
@@ -91,10 +95,10 @@ function createTag(label) {
     return div;
 }
 
-input.addEventListener('keyup', function(e) {
-    if (e.key === 'Enter') {
-        const tag = createTag(input.value);
-        tagContainer.prepend(tag);
-        input.value="";
-    }
-}
+// input.addEventListener('keyup', function(e) {
+//     if (e.key === 'Enter') {
+//         const tag = createTag(input.value);
+//         tagContainer.prepend(tag);
+//         input.value="";
+//     }
+// }
