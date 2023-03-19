@@ -94,11 +94,3 @@ function createTag(label) {
     div.appendChild(closeIcon);
     return div;
 }
-
-// input.addEventListener('keyup', function(e) {
-//     if (e.key === 'Enter') {
-//         const tag = createTag(input.value);
-//         tagContainer.prepend(tag);
-//         input.value="";
-//     }
-// }
