@@ -6,10 +6,11 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, TextAreaField, BooleanField
 from wtforms.validators import InputRequired, Length
+from flask_socketio import SocketIO,emit,join_room,leave_room
 
 # utilisation du FLASK_LOGIN: https://flask-login.readthedocs.io/en/latest/
 # creation de la base de donnees LOCALE avec SQLALCHEMY: https://flask-sqlalchemy.palletsprojects.com/en/2.x/quickstart/
-#la difference entre SQLALCHEMY et SQLITE3: SQLAlchemy est une bibliothèque de mappage objet-relationnel pour Python qui
+# la difference entre SQLALCHEMY et SQLITE3: SQLAlchemy est une bibliothèque de mappage objet-relationnel pour Python qui
 # permet de travailler avec des bases de données en utilisant des classes Python plutôt que des requêtes SQL brutes. SQL,
 # ou Structured Query Language, est un langage de programmation utilisé pour communiquer avec des bases de données relationnelles,
 # comme MySQL, PostgreSQL et SQLite. SQLAlchemy permet de générer automatiquement des requêtes SQL à partir de code Python,
@@ -19,12 +20,15 @@ from wtforms.validators import InputRequired, Length
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SECRET_KEY'] = 'thisisasecretkey'
+socketio = SocketIO(app)
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+questions = {}
 
 
 @login_manager.user_loader
@@ -71,6 +75,8 @@ class RegisterForm(FlaskForm):
         return False
 
 # classe pour le formulaire de creation de question
+
+
 class QuestionForm(FlaskForm):
     question = TextAreaField('Question', validators=[InputRequired()],
                              render_kw={"rows": "4", "id": "question", "class": "form-control"})
@@ -82,11 +88,16 @@ class QuestionForm(FlaskForm):
                           render_kw={"id": "answer3", "class": "form-control"})
     answer4 = StringField('Réponse 4', validators=[InputRequired()],
                           render_kw={"id": "answer4", "class": "form-control"})
-    correct1 = BooleanField('Réponse correcte', default=False, render_kw={"class": "form-check-input"})
-    correct2 = BooleanField('Réponse correcte', default=False, render_kw={"class": "form-check-input"})
-    correct3 = BooleanField('Réponse correcte', default=False, render_kw={"class": "form-check-input"})
-    correct4 = BooleanField('Réponse correcte', default=False, render_kw={"class": "form-check-input"})
-    submit = SubmitField('Créer la question', render_kw={"class": "btn btn-success"})
+    correct1 = BooleanField('Réponse correcte', default=False, render_kw={
+                            "class": "form-check-input"})
+    correct2 = BooleanField('Réponse correcte', default=False, render_kw={
+                            "class": "form-check-input"})
+    correct3 = BooleanField('Réponse correcte', default=False, render_kw={
+                            "class": "form-check-input"})
+    correct4 = BooleanField('Réponse correcte', default=False, render_kw={
+                            "class": "form-check-input"})
+    submit = SubmitField('Créer la question', render_kw={
+                         "class": "btn btn-success"})
 
 # fonction pour verifier si la question est dans la base de donnees ou non (pour la creation d'une question)
     def validate_question(self, question):
@@ -96,13 +107,17 @@ class QuestionForm(FlaskForm):
             return True
         return False
 # fonction pour les reponses des questions
+
     def validate_question_answers(self, i, q):
-        existing = Question.query.filter(Question.question == q.data, Question.id != i).first()
+        existing = Question.query.filter(
+            Question.question == q.data, Question.id != i).first()
         if existing:
             return True
         return False
 
 # class login pour la connexion
+
+
 class LoginForm(FlaskForm):
     username = StringField(validators=[InputRequired(), Length(min=4, max=20)],
                            render_kw={"placeholder": "Nom d'utilisateur", "id": "username"})
@@ -122,6 +137,7 @@ def accueil():
 # route pour aller a la page de connexion (login) et  verifier si le nom d'utilisateur
 # et le mot de passe sont corrects,  si oui, on va a la page d'accueil
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -136,6 +152,8 @@ def login():
     return render_template('login.html', form=form)
 
 # route pour aller a la page de deconnexion (logout) et  deconnecter l'utilisateur
+
+
 @app.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout():
@@ -143,6 +161,8 @@ def logout():
     return redirect(url_for('login'))
 
 # route pour aller a la page d'inscription (register)
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     # si l'utilisateur est connecté on le redirige vers la page dashboard
@@ -164,19 +184,23 @@ def register():
         return redirect(url_for('login'))
 
     return render_template('register.html', form=form, error="")
-#----------------------------------------------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------------------------------------------#
 
 # partie creation de question
 
-@app.route("/create_question", methods=["GET", "POST"])  # Chemin de la page de création de question
+
+# Chemin de la page de création de question
+@app.route("/create_question", methods=["GET", "POST"])
 @login_required
 def create_question():  # Page de création de question
     form = QuestionForm()
     if form.validate_on_submit():
         answers = []
         for i in range(1, 5):
-            answers.append({"reponse": form[f"answer{i}"].data, "correcte": str(form[f"correct{i}"].data).lower()})
-        new_question = Question(question=form.question.data, id_user=current_user.id, answers=str(answers))
+            answers.append({"reponse": form[f"answer{i}"].data, "correcte": str(
+                form[f"correct{i}"].data).lower()})
+        new_question = Question(
+            question=form.question.data, id_user=current_user.id, answers=str(answers))
         try:
             if form.validate_question(form.question):
                 return render_template('create_question.html', form=form,
@@ -191,6 +215,8 @@ def create_question():  # Page de création de question
     return render_template("create_question.html", form=form, error="")
 
 # route pour aller a la page de modification de question
+
+
 @app.route("/modify_question/<int:question_id>", methods=["GET", "POST"])
 @login_required
 def modify_question(question_id):
@@ -200,14 +226,16 @@ def modify_question(question_id):
     if question is None:
         return f"La question dont l'id {question_id} n'existe pas", 404
     else:
-        if question.id_user != current_user.id: # Si l'utilisateur n'est pas le propriétaire de la question, il ne pourra pas la modifier
+        # Si l'utilisateur n'est pas le propriétaire de la question, il ne pourra pas la modifier
+        if question.id_user != current_user.id:
             return f"Vous n'avez pas les droits pour modifier cette question", 403
     if form.validate_on_submit():
         if form.validate_question_answers(question_id, form.question):
             return render_template('create_question.html', form=form, error="Question déjà crée !")
         answers = []
         for i in range(1, 5):
-            answers.append({"reponse": form[f"answer{i}"].data, "correcte": str(form[f"correct{i}"].data).lower()})
+            answers.append({"reponse": form[f"answer{i}"].data, "correcte": str(
+                form[f"correct{i}"].data).lower()})
         question.question = form.question.data
         question.answers = str(answers)
         try:
@@ -225,11 +253,13 @@ def modify_question(question_id):
 
     return render_template("update_question.html", form=form, question_id=question_id)
 
-@app.route("/my_questions", methods=["GET", "POST"])  # Chemin de la page de création de question
+
+# Chemin de la page de création de question
+@app.route("/my_questions", methods=["GET", "POST"])
 @login_required
 def personal_questions():  # Page d'affichage des questions
     questions = Question.query.filter_by(id_user=current_user.id).all()
-    qanda = [] #qanda = question and answers
+    qanda = []  # qanda = question and answers
     for question in questions:
         answers = json.loads(question.answers.replace("'", '"'))
         qanda.append(
@@ -239,7 +269,8 @@ def personal_questions():  # Page d'affichage des questions
     return render_template("my_questions.html", questions=qanda, user=current_user)
 
 
-@app.route("/questions", methods=["GET"])  # Chemin de la page de création de question
+# Chemin de la page de création de question
+@app.route("/questions", methods=["GET"])
 @login_required
 def all_questions():  # Page d'affichage des questions
     questions = Question.query.all()
@@ -253,9 +284,10 @@ def all_questions():  # Page d'affichage des questions
     return render_template("all_questions.html", questions=qanda)
 
 
-@app.route('/delete/<int:question_id>', methods=['DELETE']) # Chemin de la page de supression de question
+# Chemin de la page de supression de question
+@app.route('/delete/<int:question_id>', methods=['DELETE'])
 @login_required
-def delete_question(question_id): # Fonction de suppression de question
+def delete_question(question_id):  # Fonction de suppression de question
     question = Question.query.get(question_id)
     if question:
         if question.id_user != current_user.id:
@@ -268,7 +300,9 @@ def delete_question(question_id): # Fonction de suppression de question
                         'status': 404}), 404
 
 # fonction qui recupere les bonnes reponses, recupere le tableau du dictionnaire elle parcoure la liste, si la reponse est true
-#elle affiche que celles avec true
+# elle affiche que celles avec true
+
+
 def getCorrectAnswers(answers):
     correct_answers = []
     for answer in answers:
@@ -283,8 +317,44 @@ def getAnswers(answers):
         all_answers.append(answer["reponse"])
     return all_answers
 
+# Gérer les sockets pour réception et envoie des questions/réponses
+
+@app.route('/quizz', methods = ['GET'])
+@login_required
+def quizz():
+    return render_template("quizz.html")
+
+@socketio.on('broadcast_question')
+def handleQuestion(data):
+    question = data['question']
+    identifier = data['identifier']
+    questions[identifier] = {'question': question, 'answers': []}
+    emit('question_broadcasted',{'question': question, 'identifier': identifier}, broadcast = True)
+
+@socketio.on('answer_question')
+def handleAnswer(data):
+    identifier = data['identifier']
+    answer = data['answer']
+    questions[identifier]['answers'].append(answer)
+    emit('answer_count_updated', {'identifier': identifier, 'count': len(questions[identifier]['answers'])}, broadcast=True)
+
+@socketio.on('stop_question_broadcast')
+def handleStopQuestionBroadcast(data):
+    identifier = data['identifier']
+    questions.pop(identifier, None)
+    emit('question_broadcast_stopped', {'identifier': identifier}, broadcast=True)
+
+@socketio.on('display_correction')
+def handleDisplayCorrection(data):
+    identifier = data['identifier']
+    correct_answer = questions[identifier]['question']
+    emit('correction_displayed', {'identifier': identifier, 'correct_answer': correct_answer}, broadcast=True)
+
+
+
+
 
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-    app.run(debug=True, port=5005)
+    socketio.run(app)

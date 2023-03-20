@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Question Broadcast</title>
+    <script type="text/javascript" src="//code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var socket = io();
+            // Event listener for broadcasting a question
+            $('#broadcast-form').submit(function (event) {
+                event.preventDefault();
+                var question = $('#question-input').val();
+                var identifier = $('#identifier-input').val();
+                socket.emit('broadcast_question', { 'question': question, 'identifier': identifier });
+                $('#broadcast-form').hide();
+            });
+
+            // Event listener for answering a question
+            $('#answer-form').submit(function (event) {
+                event.preventDefault();
+                var identifier = $('#identifier-input').val();
+                var answer = $('#answer-input').val();
+                socket.emit('answer_question', { 'identifier': identifier, 'answer': answer });
+                $('#answer-form').hide();
+            });
+
+            // Event listener for stopping a question broadcast
+            $('#stop-form').submit(function (event) {
+                event.preventDefault();
+                var identifier = $('#identifier-input').val();
+                socket.emit('stop_question_broadcast', { 'identifier': identifier });
+                $('#stop-form').hide();
+            });
+            // Event listener for displaying the correction
+            $('#correction-form').submit(function (event) {
+                event.preventDefault();
+                var identifier = $('#identifier-input').val();
+                socket.emit('display_correction', { 'identifier': identifier });
+                $('#correction-form').hide();
+            });
+
+            // Event listener for displaying the number of students who answered each option
+            $('#results-form').submit(function (event) {
+                event.preventDefault();
+                var identifier = $('#identifier-input').val();
+                socket.emit('display_results', { 'identifier': identifier });
+                $('#results-form').hide();
+            });
+
+            // Event listener for displaying the broadcast form after a question has been stopped
+            socket.on('display_broadcast_form', function () {
+                $('#broadcast-form').show();
+            });
+
+            // Event listener for displaying the answer form after a question has been broadcasted
+            socket.on('display_answer_form', function () {
+                $('#answer-form').show();
+            });
+
+            // Event listener for displaying the stop form after a question has been broadcasted
+            socket.on('display_stop_form', function () {
+                $('#stop-form').show();
+            });
+
+            // Event listener for displaying the correction form after a question has been stopped
+            socket.on('display_correction_form', function () {
+                $('#correction-form').show();
+            });
+
+            // Event listener for displaying the results form after a question has been stopped
+            socket.on('display_results_form', function () {
+                $('#results-form').show();
+            });
+
+            // Event listener for displaying the number of students who answered each option
+            socket.on('display_results', function (data) {
+                var results = JSON.parse(data.results);
+                for (var key in results) {
+                    if (results.hasOwnProperty(key)) {
+                        $('#results-table').append('<tr><td>' + key + '</td><td>' + results[key] + '</td></tr>');
+                    }
+                }
+            });
+
+            // Event listener for displaying the correction
+            socket.on('display_correction', function (data) {
+                var correction = data.correction;
+                $('#correction').html(correction);
+            });
+
+            // Event listener for displaying the question
+            socket.on('display_question', function (data) {
+                var question = data.question;
+                var identifier = data.identifier;
+                $('#question').html(question);
+                $('#identifier').html(identifier);
+            });
+
+            // Event listener for displaying the answer form and hiding the broadcast form
+            socket.on('display_answer_form_and_hide_broadcast_form', function () {
+                $('#broadcast-form').hide();
+                $('#answer-form').show();
+            });
+
+            // Event listener for displaying the stop form and hiding the answer form
+            socket.on('display_stop_form_and_hide_answer_form', function () {
+                $('#answer-form').hide();
+                $('#stop-form').show();
+            });
+
+            // Event listener for displaying the correction form and hiding the stop form
+            socket.on('display_correction_form_and_hide_stop_form', function () {
+                $('#stop-form').hide();
+                $('#correction-form').show();
+            });
+        });
+    </script>
+</head>
+
+<body>
+    <h1>Question Broadcast</h1>
+    <div>
+        <form id="broadcast-form">
+            <label for="question-input">Question:</label>
+            <input type="text" id="question-input" name="question-input"><br>
+            <label for="identifier-input">Identifier:</label>
+            <input type="text" id="identifier-input" name="identifier-input"><br>
+            <input type="submit" value="Broadcast Question">
+        </form>
+        <form id="answer-form" style="display: none;">
+            <label for="answer-input">Answer:</label>
+            <input type="text" id="answer-input" name="answer-input"><br>
+            <input type="submit" value="Submit Answer">
+        </form>
+        <form id="stop-form" style="display: none;">
+            <input type="submit" value="Stop Question Broadcast">
+        </form>
+        <form id="correction-form" style="display: none;">
+            <label for="correction">Correction:</label>
+            <input type="text" id="correction" name="correction"><br>
+            <input type="submit" value="Display Correction">
+        </form>
+        <form id="results-form" style="display: none;">
+            <table id="results-table">
+                <tr>
+                    <th>Option</th>
+                    <th>Number of Students</th>
+                </tr>
+            </table>
+            <input type="submit" value="Display Results">
+        </form>
+    </div>
+    <div>
+        <h3 id="question"></h3>
+        <p>Identifier: <span id="identifier"></span></p>
+    </div>
+</body>
+
+</html>
