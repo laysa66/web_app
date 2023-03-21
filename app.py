@@ -425,12 +425,13 @@ def ChangePassword():
     return render_template("ChangePassword.html")
 
 
-# CREATION EXAM
+# CREATION EXAMEN
 class ExamCreationForm(FlaskForm):
-    questions = SelectMultipleField('Select Questions', coerce=int, validators=[DataRequired()])
+    questions = SelectMultipleField('Select Questions', coerce=int, validators=[DataRequired()], choices=[])
     num_questions = SelectField('Number of Questions', choices=[(str(i), str(i)) for i in range(1, 11)],
                                 validators=[DataRequired()])
     submit = SubmitField('Create Quiz')
+
 
 @app.route('/create_exam', methods=['GET', 'POST'])
 @login_required
@@ -446,8 +447,11 @@ def create_exam():
                     num_questions=form.num_questions.data, identifier=identifier)
         db.session.add(exam)
         db.session.commit()
+        flash('Exam created successfully', 'success')
         return redirect(url_for('my_exams'))
     return render_template('create_exam.html', form=form)
+
+
 
 if __name__ == "__main__":
     # ''.join(random.choices(string.ascii_letters + string.digits, k=16))
