@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
+.container{
+    width: 60%;
+    margin : 40 px;
+}
+.tag-container{
+    border :2px solid #ccc;
+    padding : 10px;
+    border-radius: 5px;
+    display: flex;
+}
+.tag-container .tag {
+    pading : 5px;
+    border : 1px solid #ccc;
+    margin :5px;
+    display: flex;
+    align-items: center;
+    border_radius : 5px;
+    background: gray;
+}
+.tag i {
+    margin-left: 5px;
+    cursor: pointer;
+}
+.tag-container input{
+    border: none;
+    outline: none;
+    flex: 1;
+    font-size: 16px;
+    padding: 5px;
+    outline: none;
+    border: 0;
+}
+
+
+
+
+#error{
+    color: #df2359;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 10px;
+}
+#menu{
+    color: #333;
+    font-size: 30px;
+    margin: 5px;
+}
+#menu:hover{
+    color: #6fc9ff;
+    cursor: pointer;
+}

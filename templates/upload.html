@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"  crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+
+</head>
+<style>
+    #form {
+        display: flex;
+        -ms-flex-wrap: wrap;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    input{
+        box-sizing: unset !important;
+    }
+</style>
+<body>
+
+    <form id="form" method="POST" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label class="form-label" for="csvStudent">Importer le fichier csv des étudiant</label>
+            <input class="form-control form-control-sm" type="file" name="file" id="csvStudent" required>
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary mb-3">Importer</button>
+        </div>
+    </form>
+
+</body>
+<script>
+    const form = document.querySelector('form');
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        //send post request with the file to the server
+        const formData = new FormData();
+        formData.append('file', form.file.files[0]);
+        fetch('/upload_users', {
+            method: 'POST',
+            body: formData
+        }).then(res => res.json())
+            .then(data => {
+                alert(data.message)
+            })
+    })
+</script>
+</html>

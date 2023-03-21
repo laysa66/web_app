@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static',filename='css/accueil.css')}}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+    <title>Dashbord</title>
+</head>
+<body>
+<div id="dashbordform">
+    <h2> Vous etes connecté</h2>
+</div>
+<div class="topcontainner" >
+
+    <h1 id="title">Mon espace personnel <a id="logout" title="Se déconnecter" href="{{ url_for('loginEtudiant') }}"><i class="fa-solid fa-right-from-bracket"></i></a></h1>
+
+    <head>
+        <title>Enter Exam Code</title>
+    </head>
+    <body>
+    <form action="/exam" method="post">
+        <label for="exam_code">Exam Code:</label>
+        <input type="text" id="exam_code" name="exam_code">
+        <input type="submit" value="Submit">
+    </form>
+    </body>
+</div>
+</body>
+</html>

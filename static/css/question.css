@@ -55,3 +55,12 @@ margin: 0 auto;
     color: #6fc9ff;
     cursor: pointer;
 }
+.tags{
+    font-weight: bold;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.tags pre {
+    margin : 0 4px 0 0;
+}

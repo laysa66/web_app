@@ -9,6 +9,10 @@ window.onload = function () { // Quand la page est chargée
             this.selectionStart = this.selectionEnd = start + 1;
         }
     });
+    $("#tags").select2({
+        tags: true,
+        tokenSeparators: [',', ' ']
+    })
 };
 
 function previewQuestion() { // Fonction qui permet de prévisualiser la question
@@ -23,10 +27,10 @@ function previewQuestion() { // Fonction qui permet de prévisualiser la questio
 
     renderer.text = function (text) { // Fonction qui permet de gérer le rendu des $$...$$ et des $...$
         try {
-            text = text.replace(/\$\$([^$]+)\$\$/g, function (match, p1) { // Fonction qui permet de gérer le rendu des $$...$$
-                return katex.renderToString(p1, { displayMode: true });
+            text = text.replace(/\$\$([^$]+)\$\$/g, function(match, p1) { // Fonction qui permet de gérer le rendu des $$...$$
+                return katex.renderToString(p1, {displayMode: true});
             });
-            text = text.replace(/\$([^$]+)\$/g, function (match, p1) { // Fonction qui permet de gérer le rendu des $...$
+            text = text.replace(/\$([^$]+)\$/g, function(match, p1) { // Fonction qui permet de gérer le rendu des $...$
                 return katex.renderToString(p1);
             });
             return text;
@@ -35,23 +39,17 @@ function previewQuestion() { // Fonction qui permet de prévisualiser la questio
             return text;
         }
     };
+
+
+
     console.log("renderer 1: ", renderer);
     renderer.code = function (code, language) { // Fonction qui permet de gérer le rendu des codes mermaid et des codes classiques
         if (language == "mermaid") {
             return `<div class="mermaid">${code}</div>`;
         }
-        else {
-            return `<pre><code class="hljs ${language}">${hljs.highlightAuto(code).value}</code></pre>`;
-        }
+        return `<pre><code class="hljs ${language}">${hljs.highlightAuto(code).value}</code></pre>`;
     };
     console.log("renderer 2: ", renderer);
-    if (hljs && hljs.highlightAuto) {
-        console.log("hljs library is loaded");
-    } else {
-        console.log("hljs library is not loaded");
-    }
-
-
     marked.setOptions({
         renderer: renderer,
         gfm: true,
@@ -61,7 +59,7 @@ function previewQuestion() { // Fonction qui permet de prévisualiser la questio
                 return code;
             }
             else if (language) {
-                return hljs.highlight(code, { language: language }).value;
+                return hljs.highlight(code, {language: language}).value;
             }
             else {
                 return hljs.highlightAuto(code).value;
@@ -80,4 +78,19 @@ function backToEdit() { // Fonction qui permet de revenir à l'édition de la qu
     document.getElementById("btn-preview").innerText = "Aperçu"; // Modification du texte du bouton
     document.getElementById("btn-preview").setAttribute("onclick", "previewQuestion()"); // Modification de la fonction du bouton
 }
+// tags partie
+const tagContainer = document.querySelector('.tag-container');
+const input = document.querySelector('.tag-container input');
 
+function createTag(label) {
+    const div = document.createElement('div');
+    div.setAttribute('class', 'tag');
+    const span = document.createElement('span');
+    span.innerHTML = label;
+    const closeIcon = document.createElement('i');
+    closeIcon.setAttribute('class', 'material-icons');
+    closeIcon.innerHTML = 'close';
+    div.appendChild(span);
+    div.appendChild(closeIcon);
+    return div;
+}

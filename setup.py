@@ -24,6 +24,8 @@ setup(
         'typing_extensions',
         'Werkzeug',
         'WTForms',
-        'zipp'
+        'zipp',
+        'flask_change_password',
+        'pandas'
     ],
 )

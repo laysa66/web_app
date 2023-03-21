@@ -7,17 +7,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static',filename='css/accueil.css')}}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
-
-
-
     <title>Accueil</title>
 </head>
 
 <body>
 <div class="topcontainner" >
-
     <h1 id="title">Mon espace personnel , {{ user.first_name }} {{ user.last_name }}
-        <a id="logout" title="Se déconnecter" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i></a></h1>
+        <a id="logout" title="Se déconnecter" href="{{ url_for('logout') }}">
+            <i class="fa-solid fa-right-from-bracket"></i>
+        </a>
+        |
+        <a id="next" title="Page suivante" href="{{ url_for('nextPage') }}">
+            <i class="fa-solid fa-arrow-right"></i>
+        </a>
+    </h1>
+
+
+
     <div class="container">
         <!-- ici on va permettre a la personne de creer des questions et visualiser sa creation -->
         <div class="row">
@@ -35,8 +41,10 @@
                 <img src="/static/imgs/e16.png"><br>
                 <a href="{{ url_for('personal_questions') }}"> <h3>Voir, Modifier ou supprimer mes questions</h3></a>
             </div>
-            <div class="quizz">
-                <a href="{{ url_for('quizz')}}">Quizz</a>
+            <!-- Creation de l'exam-->
+            <div class="box">
+                <img src=""></br>
+                <a href=""> <h3>Créer un examen</h3></a>
             </div>
         </div>
     </div>

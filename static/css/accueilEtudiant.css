@@ -1,8 +1,8 @@
 body {
-background: #6C63FF;
-background-repeat: no-repeat;
-background-size: cover;
-background-position: center;
+    background: #6C63FF;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
 
 }
 .row {
@@ -46,12 +46,10 @@ img {
     text-align: center;
     color:#2c3636;
 }
-#title a {
+#logout {
     color : #2c3636;
     font-size : 60%;
-    text-decoration: none;
 }
-#title a :hover {
+#logout :hover {
     color : #FFFFFF;
 }
-
