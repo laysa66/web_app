@@ -41,10 +41,10 @@
                 <img src="/static/imgs/e16.png"><br>
                 <a href="{{ url_for('personal_questions') }}"> <h3>Voir, Modifier ou supprimer mes questions</h3></a>
             </div>
-            <!-- Creation de l'exam-->
+            <!-- ici avec creer examen on va permettre a la personne de creer un examen-->
             <div class="box">
                 <img src=""></br>
-                <a href=""> <h3>Créer un examen</h3></a>
+                <a href="{{url_for('create_exam')}}"> <h3>Créer un examen</h3></a>
             </div>
         </div>
     </div>

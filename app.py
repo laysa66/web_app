@@ -1,7 +1,7 @@
 import csv
 import json
 import os
-import random
+import secrets
 import string
 from datetime import datetime
 
@@ -70,6 +70,12 @@ class Question(db.Model, UserMixin):  # table base de données
     answers = db.Column(db.String(255), nullable=False)
     tags = db.Column(db.String(255), nullable=False)
 
+class Exam(db.Model, UserMixin):  # table base de données
+    id = db.Column(db.Integer, primary_key=True)
+    id_user = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
+    name = db.Column(db.String(255), nullable=False)
+    questions = db.Column(db.String(255), nullable=False)
+    identifier = db.Column(db.String(255), nullable=False)
 
 # utilisation de flask login pour la connexion et la déconnexion d'un utilisateur
 # ICI pour plus d'informations : https://youtu.be/71EU8gnZqZQ
@@ -420,12 +426,28 @@ def ChangePassword():
 
 
 # CREATION EXAM
-class QuizCreationForm(FlaskForm):
+class ExamCreationForm(FlaskForm):
     questions = SelectMultipleField('Select Questions', coerce=int, validators=[DataRequired()])
     num_questions = SelectField('Number of Questions', choices=[(str(i), str(i)) for i in range(1, 11)],
                                 validators=[DataRequired()])
     submit = SubmitField('Create Quiz')
 
+@app.route('/create_exam', methods=['GET', 'POST'])
+@login_required
+def create_exam():
+    form = ExamCreationForm()
+    questions = Question.query.filter_by(id_user=current_user.id).all()
+    form.questions.choices = [(question.id, question.question) for question in questions]
+    if form.validate_on_submit():
+        questions = Question.query.filter_by(id_user=current_user.id).all()
+        selected_questions = [question for question in questions if question.id in form.questions.data]
+        identifier = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(6))
+        exam = Exam(id_user=current_user.id, questions=json.dumps([question.to_json() for question in selected_questions]),
+                    num_questions=form.num_questions.data, identifier=identifier)
+        db.session.add(exam)
+        db.session.commit()
+        return redirect(url_for('my_exams'))
+    return render_template('create_exam.html', form=form)
 
 if __name__ == "__main__":
     # ''.join(random.choices(string.ascii_letters + string.digits, k=16))
