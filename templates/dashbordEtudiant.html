@@ -11,11 +11,11 @@
 </head>
 <body>
 <div id="dashbordform">
-  <h2> Vous avez connecté</h2>
+  <h2> Vous etes connecté</h2>
 </div>
 <div class="topcontainner" >
 
-  <h1 id="title">Mon espace personnel ,
+  <h1 id="title">Mon espace personnel
     <a id="logout" title="Se déconnecter" href="{{ url_for('logoutEtudiant') }}"><i class="fa-solid fa-right-from-bracket"></i></a></h1>
 
   <head>
@@ -25,7 +25,7 @@
   <form action="/exam" method="post">
     <label for="exam_code">Exam Code:</label>
     <input type="text" id="exam_code" name="exam_code">
-    <input type="submit" value="Submit">
+    <input type="submit" value="Search">
   </form>
   </body>
 </div>

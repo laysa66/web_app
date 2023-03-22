@@ -23,7 +23,6 @@ from flask_change_password import ChangePassword, ChangePasswordForm, SetPasswor
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///passwords.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'thisisasecretkey'
 db = SQLAlchemy(app)
@@ -56,6 +55,13 @@ class Question(db.Model, UserMixin):  # table base de données
     id_user = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
     question = db.Column(db.String(255), nullable=False)
     answers = db.Column(db.String(255), nullable=False)
+
+class Exam(db.Model, UserMixin):  # table base de données
+        id = db.Column(db.Integer, primary_key=True)
+        id_user = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
+        name = db.Column(db.String(255), nullable=False)
+        questions = db.Column(db.String(255), nullable=False)
+        identifier = db.Column(db.String(255), nullable=False)
 
 
 # utilisation de flask login pour la connexion et la déconnexion d'un utilisateur
@@ -352,24 +358,54 @@ def registerEtudiant():
 def ChangePassword():
     if request.method == "POST":
         username = request.form['username']
-        newPassword = request.form['newpassword']
+        old_password = request.form.get('old_password',False)
+        new_password = request.form.get('new_password',False)
         user = User.query.filter_by(username=username).first()
+        passwo = User.query.filter_by(password=old_password).first()
         if user:
-            user.password = newPassword
-            db.session.commit()
-            msg = "Changed successfully"
-            flash('Changed successfully.', 'success')
-            return render_template("ChangePassword.html", success=msg)
+            if passwo:
+                user.password = new_password
+                db.session.commit()
+                msg = "Changed successfully"
+                flash('Changed successfully.', 'success')
+                return render_template("ChangePassword.html", success=msg)
+            else:
+                error = "Wrong password"
+                return render_template("ChangePassword.html", error=error)
         else:
-            error = "Username not found"
-            return render_template("ChangePassword.html", error=error)
+            return render_template("ChangePassword.html")
     return render_template("ChangePassword.html")
 
 
 @app.route('/examCode', methods=['POST'])
 def examCode():
     exam_code = request.form['exam_code']
-    return render_template('examCode.html', exam_code=exam_code)
+    #exam = Exam.query.filter_by(exam_code=exam_code).first()
+    if exam_code in Exam.identifier:
+        questions = Exam.identifier[exam_code]
+        qanda = [] #qanda = question and answers
+        for question in questions:
+            answers = json.loads(question.answers.replace("'", '"'))
+            qanda.append(
+                {'id': question.id, 'question': question.question, 'answers': [item["reponse"] for item in answers],
+                 'correct_answers': [item["reponse"] for item in answers if item["correcte"] == "true"]})
+
+        return redirect(url_for('my-questionsEtudiant', questions=qanda))
+    else:
+        return render_template('examCode.html', error="Code d'examen incorrect")
+
+@app.route("/my_questionsEtudiant", methods=["GET", "POST"])  # Chemin de la page de création de question
+@login_required
+def personal_questions_Etudiant():  # Page d'affichage des questions
+    questions = Question.query.filter_by(id_user=current_user.id).all()
+    qanda = [] #qanda = question and answers
+    for question in questions:
+        answers = json.loads(question.answers.replace("'", '"'))
+        qanda.append(
+            {'id': question.id, 'question': question.question, 'answers': [item["reponse"] for item in answers],
+             'correct_answers': [item["reponse"] for item in answers if item["correcte"] == "true"]})
+
+    return render_template("my_questionsEtudiant.html", questions=qanda, user=current_user)
 
 if __name__ == "__main__":
     with app.app_context():
