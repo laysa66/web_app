@@ -96,7 +96,7 @@ class RegisterForm(FlaskForm):
 
     submit = SubmitField('Register')
 
-    # fonction pour verifier si le nom d'utilisateur existe deja dans la base de donnees ou non (pour l'inscription)
+# fonction pour verifier si le nom d'utilisateur existe deja dans la base de donnees ou non (pour l'inscription)
 
     def validate_username(self, username):
         existing_user_username = User.query.filter_by(
@@ -178,10 +178,6 @@ def etudiant():
 
 
 
-@app.route('/etudiant ', methods=['GET', 'POST'])
-def etudiant():
-    return render_template('etudiant.html', user=current_user)
-
 
 # route pour aller a la page de deconnexion (logout) et  deconnecter l'utilisateur
 @app.route('/logout', methods=['GET', 'POST'])
@@ -192,17 +188,6 @@ def logout():
 @app.route('/next', methods=['GET', 'POST'])
 def next():
     return redirect(url_for('accueil2'))
-@app.route('/back', methods=['GET', 'POST'])
-def back():
-    return redirect(url_for('accueil'))
-
-
-
-@app.route('/next', methods=['GET', 'POST'])
-def next():
-    return redirect(url_for('accueil2'))
-
-
 @app.route('/back', methods=['GET', 'POST'])
 def back():
     return redirect(url_for('accueil'))
