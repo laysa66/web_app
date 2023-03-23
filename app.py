@@ -76,9 +76,15 @@ class Question(db.Model, UserMixin):  # table base de données
 class Exam(db.Model, UserMixin):  # table base de données
     id = db.Column(db.Integer, primary_key=True)
     id_user = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
-    name = db.Column(db.String(255), nullable=False)
     questions = db.Column(db.String(255), nullable=False)
     identifier = db.Column(db.String(255), nullable=False)
+    
+class Answer(db.Model, UserMixin):  # table base de données
+    id = db.Column(db.Integer, primary_key=True)
+    id_user = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
+    id_question = db.Column(db.Integer, db.ForeignKey(Question.id), nullable=False)
+    answer = db.Column(db.String(255), nullable=False)
+    id_exam = db.Column(db.Integer, db.ForeignKey(Exam.id), nullable=False)
 
 # utilisation de flask login pour la connexion et la déconnexion d'un utilisateur
 # ICI pour plus d'informations : https://youtu.be/71EU8gnZqZQ
@@ -140,6 +146,11 @@ class LoginForm(FlaskForm):
 
     submit = SubmitField('LOGIN', render_kw={"id": "submit"})
 
+
+class ExamCreationForm(FlaskForm):
+    questions = SelectMultipleField('Questions', choices=[], validators=[InputRequired()],
+                                    render_kw={"id": "questions", "class": "form-control"})
+    submit = SubmitField('Create Quiz', render_kw={"class": "btn btn-success", "id": "submit"})
 
 @app.route('/')
 @login_required
@@ -529,29 +540,28 @@ def personal_questions_Etudiant():  # Page d'affichage des questions
     return render_template("my_questionsEtudiant.html", questions=qanda, user=current_user)
 
 # CREATION EXAMEN
-class ExamCreationForm(FlaskForm):
-    questions = SelectMultipleField('Select Questions', coerce=int, validators=[DataRequired()], choices=[])
-    num_questions = SelectField('Number of Questions', choices=[(str(i), str(i)) for i in range(1, 11)],
-                                validators=[DataRequired()])
-    submit = SubmitField('Create Quiz')
-
-
 @app.route('/create_exam', methods=['GET', 'POST'])
 @login_required
 def create_exam():
     form = ExamCreationForm()
     questions = Question.query.filter_by(id_user=current_user.id).all()
-    form.questions.choices = [(question.id, question.question) for question in questions]
+    form.questions.choices = [(question.id , question.question, question.tags ) for question in questions]
     if form.validate_on_submit():
+        print(request.form)
         questions = Question.query.filter_by(id_user=current_user.id).all()
-        selected_questions = [question for question in questions if question.id in form.questions.data]
+        # Récupération des questions sélectionnées avec request.form
+        #selected_questions = [question for question in questions if str(question.id) in request.form]
+        selected_questions = []
         identifier = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(6))
-        exam = Exam(id_user=current_user.id, questions=json.dumps([question.to_json() for question in selected_questions]),
+        exam = Exam(id_user=current_user.id, questions=json.dumps([question.to_dict() for question in selected_questions]),
                     num_questions=form.num_questions.data, identifier=identifier)
         db.session.add(exam)
         db.session.commit()
-        flash('Exam created successfully', 'success')
-        return redirect(url_for('my_exams'))
+        print('Exam created successfully')
+        return redirect(url_for('examCode',identifier=identifier))
+    else:
+        print(request.form)
+
     return render_template('create_exam.html', form=form)
 
 
