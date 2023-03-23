@@ -22,6 +22,7 @@ from wtforms import (BooleanField, PasswordField, SelectField,
                      TextAreaField)
 from wtforms.validators import InputRequired, Length, ValidationError,DataRequired
 
+
 # utilisation du FLASK_LOGIN: https://flask-login.readthedocs.io/en/latest/
 # creation de la base de donnees LOCALE avec SQLALCHEMY: https://flask-sqlalchemy.palletsprojects.com/en/2.x/quickstart/
 # la difference entre SQLALCHEMY et SQLITE3: SQLAlchemy est une bibliothèque de mappage objet-relationnel pour Python qui
@@ -92,6 +93,7 @@ class RegisterForm(FlaskForm):
                              render_kw={"placeholder": "Mot de passe", "id": "password"})
     select_type_user = SelectField('Type d\'utilisateur', choices=[('teacher', 'Professeur'), ('student', 'Etudiant')],
                                    validators=[InputRequired()], render_kw={"id": "usertype"})
+
     submit = SubmitField('Register')
 
     # fonction pour verifier si le nom d'utilisateur existe deja dans la base de donnees ou non (pour l'inscription)
@@ -142,8 +144,6 @@ class LoginForm(FlaskForm):
 @login_required
 # route pour aller a la page d'accueil
 def accueil():
-    # if current_user.type_user != 'teacher':
-    # return render_template('etudiant.html', user=current_user)
     return render_template('accueil.html', user=current_user)
 
 
@@ -153,11 +153,9 @@ def accueil():
 def accueil2():
     return render_template('accueil2.html', user=current_user)
 
-
 @app.route('/next', methods=['GET'])
 def nextPage():
     return redirect(url_for('accueil2'))
-
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -174,6 +172,10 @@ def login():
                 else:
                     return redirect(url_for('etudiant'))
     return render_template('login.html', form=form)
+@app.route('/etudiant ', methods=['GET', 'POST'])
+def etudiant():
+    return render_template('etudiant.html', user=current_user)
+
 
 
 @app.route('/etudiant ', methods=['GET', 'POST'])
@@ -187,6 +189,13 @@ def etudiant():
 def logout():
     logout_user()
     return redirect(url_for('login'))
+@app.route('/next', methods=['GET', 'POST'])
+def next():
+    return redirect(url_for('accueil2'))
+@app.route('/back', methods=['GET', 'POST'])
+def back():
+    return redirect(url_for('accueil'))
+
 
 
 @app.route('/next', methods=['GET', 'POST'])
@@ -366,6 +375,68 @@ def getAnswers(answers):
     for answer in answers:
         all_answers.append(answer["reponse"])
     return all_answers
+
+#csv part
+ALLOWED_EXTENSIONS = set(['csv'])
+def allowed_file(filename):# the filename contains the csv extension
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+@app.route('/upload', methods=['GET','POST'])
+def upload_file():
+    if request.method == 'POST':
+        file=request.files['file']
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            new_filename= f'{filename.split(".")[0]}_{str(datetime.now())}.csv'
+            file.save(os.path.join('input', new_filename))
+        return redirect(url_for('upload_file'))
+    return render_template('upload.html')
+
+with open ('input/etudiant.csv') as csvfile:
+    reader = csv.DictReader(csvfile)
+    for row in reader:
+        etudiant = User(username=row['username'],first_name=row['firstname'],lastname=row['lastname'] , password=row['password'], select_type_user=row['select_type_user'])
+        db.session.add(etudiant)
+    db.session.commit()
+
+
+#partie de mahmoud
+@app.route('/loginEtudiant',methods=['GET', 'POST'])
+def loginEtudiant():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user=User.query.filter_by(username=form.username.data).first()
+        if user:
+            if bcrypt.check_password_hash(user.password,form.password.data):
+                login_user(user)
+                return redirect(url_for('dashbordEtudiant'))
+    return render_template('loginEtudiant.html',form=form)
+
+
+
+@app.route('/ChangePassword', methods=["GET", "POST"])
+def ChangePassword():
+    if request.method == "POST":
+        username = request.form['username']
+        newPassword = request.form['newpassword']
+        user = User.query.filter_by(username=username).first()
+        if user:
+            user.password = newPassword
+            db.session.commit()
+            msg = "Changed successfully"
+            alert('Changed successfully.', 'success')
+            return render_template("ChangePassword.html", success=msg)
+        else:
+            error = "Username not found"
+            return render_template("ChangePassword.html", error=error)
+    return render_template("ChangePassword.html")
+
+
+@app.route('/examCode', methods=['POST'])
+def examCode():
+    exam_code = request.form['exam_code']
+    return render_template('examCode.html', exam_code=exam_code)
+
 
 
 @login_required
