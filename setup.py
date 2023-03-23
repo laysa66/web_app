@@ -26,6 +26,7 @@ setup(
         'WTForms',
         'zipp',
         'flask_change_password',
-        'pandas'
+        'pandas',
+        "flask_socketio"
     ],
 )

@@ -342,10 +342,11 @@ def all_questions():  # Page d'affichage des questions
     questions = Question.query.all()
     qanda = []
     for question in questions:
+        tags = json.loads(question.tags.replace("'", '"'))
         answers = json.loads(question.answers.replace("'", '"'))
         qanda.append(
             {'id': question.id, 'question': question.question, 'answers': [item["reponse"] for item in answers],
-             'correct_answers': [item["reponse"] for item in answers if item["correcte"] == "true"]})
+             'correct_answers': [item["reponse"] for item in answers if item["correcte"] == "true"],'tags': tags})
 
     return render_template("all_questions.html", questions=qanda)
 
