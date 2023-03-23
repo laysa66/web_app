@@ -7,6 +7,8 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"  crossorigin="anonymous"></script>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+    <script src="{{ url_for('static', filename='js/functions.js') }}"></script>
+
     <!-- HLJS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/default.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
@@ -43,13 +45,15 @@
           <p id="noqerr"> Les exos sont terminés </p> <!-- Si aucune question n'est crée il le remet a la page pour creer une question -->
           {% endif %}
           {% for question in questions %}
+          <BUTTON ONCLICK="ShowAndHide()">Click me</BUTTON>
+          <DIV ID="SectionName" STYLE="display:none">Text to be shown and hidden</DIV>
           <div class="question">
 
-               <div id="print-{{ question.id }}">
-                  <h3 id="question-{{ question.id }}" class="question_txt">{{ question.question }}</h3>
-                  <div id="preview-{{ question.id}}" class="preview"></div>
-                  <h4>Réponses:</h4>
-                  <ul>
+               <div id="print-{{ question.id }}"> <i onclick="ShowAndHideQuestion()" class="arrow down"> </i>
+                  <h3 id="question-{{ question.id }}"  class="question_txt" >{{ question.question }} </h3>
+                  <div id="preview-{{ question.id}}"   class="preview listeQuestion">   </div>
+                   <h4>Réponses: <i onclick="ShowAndHideReponse()" class="arrow down"> </i> </h4>
+                  <ul id="listeReponses">
                      {% for answer in question.answers %}
                      <li> {{ answer }} <input type="checkbox" id="vehicle1" name="vehicle1" value="Bike"> </li>
                      {% endfor %}
@@ -60,7 +64,6 @@
           </div>
           <br>
 
-          #How can I move to the next exam question while keeping the answer to the old question, How can I write this function with html and python
 
 
 
