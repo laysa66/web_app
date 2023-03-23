@@ -385,50 +385,9 @@ def allowed_file(filename):# the filename contains the csv extension
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@login_required
-@app.route('/upload_users', methods=['GET', 'POST'])
-def upload_file():
-    if request.method == 'POST':
-        file = request.files['file']
-        if file:
-            # Read the CSV file
-            reader = csv.DictReader(file.stream.read().decode("utf-8").splitlines(), delimiter=';')
-            errors = []
-            for row in reader:
-                # Add the user to the database
-                new_user = User(username=row['username'], password=bcrypt.generate_password_hash(row['password']),
-                                first_name=row["firstname"],
-                                last_name=row["lastname"], type_user=row["type_user"])
-                try:
-                    db.session.add(new_user)
-                    db.session.commit()
-                except Exception as e:
-                    print(e)
-                    errors.append(row)
-            errtext = f"Il y a eu des erreurs lors du chargement des utilisateurs suivants\n {errors}" if len(errors) > 0 else ''
-            return jsonify({'success': True, 'message': f"Fichier importé avec succès !\n{errtext}"})
-    # Render an HTML form that allows the user to select a CSV file
-    return render_template('upload.html')
-
-
-# partie de mahmoud
-@app.route('/loginEtudiant', methods=['GET', 'POST'])
-def loginEtudiant():
-    form = LoginForm()
-    if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
-        if user:
-            if bcrypt.check_password_hash(user.password, form.password.data):
-                login_user(user)
-                return redirect(url_for('dashbordEtudiant'))
-    return render_template('loginEtudiant.html',form=form)
 
 def logoutEtudiant_user():
     pass
-
-def logoutEtudiant_user():
-    pass
-
 
 @app.route('/logoutEtudiant', methods=['GET', 'POST'])
 @login_required
@@ -458,35 +417,7 @@ def registerEtudiant():
 
     return render_template('registerEtudiant.html', form=form, error="")
 
-@app.route('/logoutEtudiant', methods=['GET', 'POST'])
-@login_required
-def logoutEtudiant():
-    logout_user()
-    return redirect(url_for('loginEtudiant'))
-
-@app.route('/registerEtudiant', methods=['GET', 'POST'])
-def registerEtudiant():
-    # si l'utilisateur est connecté on le redirige vers la page dashboard
-    if current_user.is_authenticated:
-        return redirect(url_for('accueilEtudiant'))
-    form = RegisterForm()
-    if form.validate_on_submit():
-        hashed_password = bcrypt.generate_password_hash(form.password.data)
-        new_user = User(username=form.username.data, password=hashed_password, first_name=form.firstname.data,
-                        last_name=form.lastname.data)
-        try:
-            if form.validate_username(form.username):
-                return render_template('registerEtudiant.html', form=form, error="Pseudunyme déjà utilisé")
-            db.session.add(new_user)
-            db.session.commit()
-        except Exception as e:
-            print(e)
-            return "Il y a eu un problème lors de l'inscription"
-        return redirect(url_for('login'))
-
-    return render_template('registerEtudiant.html', form=form, error="")
-
-@app.route('/ChangePassword', methods=["GET", "POST"])
+"""@app.route('/ChangePassword', methods=["GET", "POST"])
 def ChangePassword():
     if request.method == "POST":
         username = request.form['username']
@@ -500,13 +431,7 @@ def ChangePassword():
         else:
             error = "Username not found"
             return render_template("ChangePassword.html", error=error)
-    return render_template("ChangePassword.html")
-
-
-@app.route('/examCode', methods=['POST'])
-def examCode():
-    exam_code = request.form['exam_code']
-    return render_template('examCode.html', exam_code=exam_code)
+    return render_template("ChangePassword.html")"""
 
 
 @login_required
