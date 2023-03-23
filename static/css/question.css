@@ -72,3 +72,15 @@ margin: 0 auto;
 .tags pre {
     margin : 0 4px 0 0;
 }
+
+
+.arrow {
+    border: solid #e30a0a;
+    border-width: 0 3px 3px 0;
+    display: inline-block;
+    padding: 3px;
+}
+.down {
+    transform: rotate(45deg);
+    -webkit-transform: rotate(45deg);
+}
