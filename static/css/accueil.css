@@ -46,10 +46,18 @@ img {
     text-align: center;
     color:#2c3636;
 }
-#logout {
+#title a {
     color : #2c3636;
     font-size : 60%;
+    text-decoration: none;
 }
-#logout :hover {
+#title a :hover {
     color : #FFFFFF;
+}
+
+=======
+#next{
+    color : darkred;
+    font-size : 200%;
+
 }

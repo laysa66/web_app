@@ -62,15 +62,13 @@ margin: 0 auto;
     right: 0;
     margin: 10px;
     margin-top: 30px;
-}
 
-.arrow {
-    border: solid #e30a0a;
-    border-width: 0 3px 3px 0;
-    display: inline-block;
-    padding: 3px;
+.tags{
+    font-weight: bold;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
 }
-.down {
-    transform: rotate(45deg);
-    -webkit-transform: rotate(45deg);
+.tags pre {
+    margin : 0 4px 0 0;
 }

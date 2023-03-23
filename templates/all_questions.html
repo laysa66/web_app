@@ -54,6 +54,12 @@
                         <li>{{ correct_answer }}</li>
                     {% endfor %}
                 </ul>
+                <div class="tags">
+                    {% for tag in question.tags %}
+                        <pre>#{{ tag }}</pre>
+                    {% endfor %}
+                </div>
+
             </div>
         </div>
         <br>

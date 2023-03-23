@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+        integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+    <link rel="stylesheet" href="{{ url_for('static',filename='css/accueil.css')}}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+    <title>Créer un examen</title>
+</head>
+
+<body>
+    <a id="menu" title="Revenir au menu principal" href="{{ url_for('accueil') }}"><i class="fa-solid fa-house-user"></i></a>
+    <h1 class="text-center mt-5 mb-5">Créer un examen</h1>
+    <form method="POST" action="{{ url_for('create_exam') }}">
+        {{ form.csrf_token }}
+        <div class="form-group">
+          {{ form.hidden_tag() }}
+        </div>
+        <div class="form-group">
+          {{ form.num_questions.label(class="form-label") }}
+          {{ form.num_questions(class="form-control") }}
+        </div>
+        <div class="form-group">
+          {% for question in form.questions %}
+          <div class="card mb-3">
+            <div class="card-body">
+              <div class="form-check">
+              <input type="checkbox" name="question-{{question.id}}-checked">
+              <h5 id="question-to-display" class="card-title">{{ question }}</h5>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-primary">Create Exam</button>
+      </form>      
+</body>
+
+</html>

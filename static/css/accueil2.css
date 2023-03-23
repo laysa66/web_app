@@ -5,16 +5,17 @@ body {
     background-position: center;
 
 }
-.row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    justify-content: space-around;
+#back{
+    color : darkred;
+    font-size : 200%;
 }
-.topcontainner{
-    text-align: center;
+#logout {
+    color : #2c3636;
+    font-size : 200%;
 }
-
+#logout :hover {
+    color : #FFFFFF;
+}
 img {
     border-radius: 8px;
     margin: 0 0 8px 0;
@@ -35,21 +36,4 @@ img {
 }
 .box a :hover{
     color: #2c3636;
-}
-
-#title {
-    font-size: 45px;
-    font-weight: 700;
-    line-height: 1.1;
-    margin-top: 0;
-    margin-bottom: 10px;
-    text-align: center;
-    color:#2c3636;
-}
-#logout {
-    color : #2c3636;
-    font-size : 60%;
-}
-#logout :hover {
-    color : #FFFFFF;
 }
