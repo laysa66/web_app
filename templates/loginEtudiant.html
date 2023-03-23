@@ -24,7 +24,10 @@
 
      <div id="ChangerMotDePasse">
          <p> Vous voulez changer votre mot de passe ? <a href="{{url_for('ChangePassword')}}">Changer mot de passe</a>
-         <p> Vous voulez changer votre mot de passe ? <a href="{{url_for('registerEtudiant')}}">Changer mot de passe</a>
+            <div id="footer-lg">
+                <p> Vous n'êtes pas inscrit ? <a href="{{ url_for('register') }}"> Créer un compte !</a><p>
+                <p> Vous avez oublié votre mot de passe ? <a href="{{url_for('ChangePassword')}}">Mot de passe oublié</a><p>
+            </div>
      </div>
 </div>
 </body>
