@@ -1,4 +1,5 @@
 import csv
+
 import json
 import os
 import secrets
@@ -21,6 +22,8 @@ from wtforms import (BooleanField, PasswordField, SelectField,
                      SelectMultipleField, StringField, SubmitField,
                      TextAreaField)
 from wtforms.validators import InputRequired, Length, ValidationError,DataRequired
+from flask_change_password import ChangePassword, ChangePasswordForm, SetPasswordForm
+
 
 
 # utilisation du FLASK_LOGIN: https://flask-login.readthedocs.io/en/latest/
@@ -43,6 +46,7 @@ bcrypt = Bcrypt(app)
 app.secret_key = os.urandom(20)
 flask_change_password = ChangePassword(min_password_length=10, rules=dict(long_password_override=2))
 flask_change_password.init_app(app)
+
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -361,6 +365,17 @@ def getAnswers(answers):
         all_answers.append(answer["reponse"])
     return all_answers
 
+
+@app.route('/accueilEtudiant')
+def accueilEtudiant():
+    return render_template('accueilEtudiant.html')
+
+@app.route('/dashbordEtudiant',methods=['GET', 'POST'])
+@login_required
+def dashbordEtudiant():
+    return render_template('dashbordEtudiant.html')
+
+
 #csv part
 ALLOWED_EXTENSIONS = set(['csv'])
 def allowed_file(filename):# the filename contains the csv extension
@@ -398,6 +413,37 @@ def loginEtudiant():
     return render_template('loginEtudiant.html',form=form)
 
 
+def logoutEtudiant_user():
+    pass
+
+
+@app.route('/logoutEtudiant', methods=['GET', 'POST'])
+@login_required
+def logoutEtudiant():
+    logout_user()
+    return redirect(url_for('loginEtudiant'))
+
+@app.route('/registerEtudiant', methods=['GET', 'POST'])
+def registerEtudiant():
+    # si l'utilisateur est connecté on le redirige vers la page dashboard
+    if current_user.is_authenticated:
+        return redirect(url_for('accueilEtudiant'))
+    form = RegisterForm()
+    if form.validate_on_submit():
+        hashed_password = bcrypt.generate_password_hash(form.password.data)
+        new_user = User(username=form.username.data, password=hashed_password, first_name=form.firstname.data,
+                        last_name=form.lastname.data)
+        try:
+            if form.validate_username(form.username):
+                return render_template('registerEtudiant.html', form=form, error="Pseudunyme déjà utilisé")
+            db.session.add(new_user)
+            db.session.commit()
+        except Exception as e:
+            print(e)
+            return "Il y a eu un problème lors de l'inscription"
+        return redirect(url_for('login'))
+
+    return render_template('registerEtudiant.html', form=form, error="")
 
 @app.route('/ChangePassword', methods=["GET", "POST"])
 def ChangePassword():
@@ -463,23 +509,60 @@ def loginEtudiant():
     return render_template('loginEtudiant.html', form=form)
 
 
+
 @app.route('/ChangePassword', methods=["GET", "POST"])
 def ChangePassword():
     if request.method == "POST":
         username = request.form['username']
-        newPassword = request.form['newpassword']
+        changementMotDePasse
+        old_password = request.form.get('old_password',False)
+        new_password = request.form.get('new_password',False)
         user = User.query.filter_by(username=username).first()
+        passwo = User.query.filter_by(password=old_password).first()
         if user:
-            user.password = newPassword
-            db.session.commit()
-            msg = "Changed successfully"
-            alert('Changed successfully.', 'success')
-            return render_template("ChangePassword.html", success=msg)
+            if passwo:
+                user.password = new_password
+                db.session.commit()
+                msg = "Changed successfully"
+                flash('Changed successfully.', 'success')
+                return render_template("ChangePassword.html", success=msg)
+            else:
+                error = "Wrong password"
+                return render_template("ChangePassword.html", error=error)
         else:
-            error = "Username not found"
-            return render_template("ChangePassword.html", error=error)
+            return render_template("ChangePassword.html")
     return render_template("ChangePassword.html")
 
+
+@app.route('/examCode', methods=['POST'])
+def examCode():
+    exam_code = request.form['exam_code']
+    #exam = Exam.query.filter_by(exam_code=exam_code).first()
+    if exam_code in Exam.identifier:
+        questions = Exam.identifier[exam_code]
+        qanda = [] #qanda = question and answers
+        for question in questions:
+            answers = json.loads(question.answers.replace("'", '"'))
+            qanda.append(
+                {'id': question.id, 'question': question.question, 'answers': [item["reponse"] for item in answers],
+                 'correct_answers': [item["reponse"] for item in answers if item["correcte"] == "true"]})
+
+        return redirect(url_for('my-questionsEtudiant', questions=qanda))
+    else:
+        return render_template('examCode.html', error="Code d'examen incorrect")
+
+@app.route("/my_questionsEtudiant", methods=["GET", "POST"])  # Chemin de la page de création de question
+@login_required
+def personal_questions_Etudiant():  # Page d'affichage des questions
+    questions = Question.query.filter_by(id_user=current_user.id).all()
+    qanda = [] #qanda = question and answers
+    for question in questions:
+        answers = json.loads(question.answers.replace("'", '"'))
+        qanda.append(
+            {'id': question.id, 'question': question.question, 'answers': [item["reponse"] for item in answers],
+             'correct_answers': [item["reponse"] for item in answers if item["correcte"] == "true"]})
+
+    return render_template("my_questionsEtudiant.html", questions=qanda, user=current_user)
 
 # CREATION EXAMEN
 class ExamCreationForm(FlaskForm):
@@ -506,7 +589,6 @@ def create_exam():
         flash('Exam created successfully', 'success')
         return redirect(url_for('my_exams'))
     return render_template('create_exam.html', form=form)
-
 
 
 if __name__ == "__main__":
