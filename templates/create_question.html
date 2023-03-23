@@ -26,7 +26,11 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.2/styles/atom-one-dark.min.css">
-    <script>mermaid.initialize({startOnLoad:true});</script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script>
+        mermaid.initialize({startOnLoad:true});
+    </script>
     <!-- JS -->
     <script src="{{ url_for('static', filename='js/question.js') }}"></script>
     <!-- css -->
@@ -37,57 +41,77 @@
  <a id="menu" title="Revenir au menu principal" href="{{ url_for('accueil') }}"><i class="fa-solid fa-house-user"></i></a>
 
  <div class="container">
-        <form method="POST" action="" class="mx-auto w-50">
-            {{ form.csrf_token }}
+        <form method="POST" action="" id="form" class="mx-auto w-50">
             <div class="form-group">
                 <label for="question">Question :</label>
-                {{ form.question() }}
+                <textarea class="form-control" id="question" name="question" required="" rows="4" data-lt-tmp-id="lt-445189" spellcheck="false" data-gramm="false"></textarea>
             </div>
             <div id="preview"></div>
             <button class="btn btn-primary" id="btn-preview" type="button" onclick="previewQuestion()">Aperçu</button>
             <br>
             <div id="answers">
                 <div class="form-group">
-                    <label for="answer1">Réponse 1:</label>
-                    {{ form.answer1() }}
-                    <div class="form-check">
-                        {{ form.correct1() }}
-                        <label class="form-check-label">Réponse correcte</label>
-                    </div>
-                    <label for="answer2">Réponse 2:</label>
-                    {{ form.answer2() }}
-                    <div class="form-check">
-                        {{ form.correct2() }}
-                        <label class="form-check-label">Réponse correcte</label>
-                    </div>
-                    <label for="answer3">Réponse 3:</label>
-                    {{ form.answer3() }}
-                    <div class="form-check">
-                        {{ form.correct3() }}
-                        <label class="form-check-label">Réponse correcte</label>
-                    </div>
-                    <label for="answer4">Réponse 4:</label>
-                    {{ form.answer4() }}
-                    <div class="form-check">
-                        {{ form.correct4() }}
-                        <label class="form-check-label">Réponse correcte</label>
-                    </div>
+                    <label for="tags">Tags:</label>
+                    <select id="tags" class="form-control" multiple="multiple">
+                    </select>
+
+                    {% for i in range(1,5) %}
+                        <label for="answer{{ i }}">Réponse {{ i }}:</label>
+                        <input class="form-control" id="answer{{ i }}" name="answer{{ i }}" required="" type="text" value="">
+                        <div class="form-check">
+                            <input class="form-check-input" id="correct{{ i }}" name="correct{{ i }}" type="checkbox" value="y" />
+                            <label class="form-check-label" for="correct{{ i }}">Réponse correcte</label>
+                        </div>
+                    {% endfor %}
                 </div>
             </div>
-            {{ form.submit() }}
+            <input class="btn btn-success" id="submit" name="submit" type="submit" value="Créer la question">
             <p id="error">{{ error }}</p>
         </form>
-    </div>
-    <!-- add the tags -->
-    <div class="container">
-       <div class="tag-container">
 
-
-        <input type="text" class="input" placeholder="Add tag">
-
-    </div>
-    </div>
+ </div>
 
 </body>
+<script>
+    // prevent default when submitted form
+    $('#form').submit(function(e) {
+        e.preventDefault()
+        let question = $('#question').val()
+        let tags = $('#tags').val()
+        let answers = {
+            answer1: $('#answer1').val(),
+            answer2: $('#answer2').val(),
+            answer3: $('#answer3').val(),
+            answer4: $('#answer4').val()
+        }
+        let correct = {
+            correct1: $('#correct1').is(':checked'),
+            correct2: $('#correct2').is(':checked'),
+            correct3: $('#correct3').is(':checked'),
+            correct4: $('#correct4').is(':checked')
+        }
+        let data = {
+            question: question,
+            tags: tags,
+            answers: answers,
+            correct: correct
+        }
+        fetch('/create_question', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        }).then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                $('#error').text(data.error)
+            } else {
+                alert(data.message)
+                window.location.href = "/my_questions"
+            }
+        })
+    });
+</script>
 
 </html>

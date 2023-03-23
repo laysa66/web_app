@@ -1,1 +1,1 @@
-source env/bin/activate && pip install -e .
+. env/bin/activate && pip install -e .
