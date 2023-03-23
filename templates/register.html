@@ -23,6 +23,11 @@
             {{ form.lastname }}
             <label for="password">Mot de passe</label>
             {{ form.password }}
+            <td>
+            <label for="usertype">Vous êtes:</label>
+            {{ form.select_type_user }}
+            </td>
+
             {{ form.submit }}
             <p>déjà inscrit ?<a href="{{ url_for('login') }}"> Connexion</a></p>
         </form>

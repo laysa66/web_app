@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title> Accueil</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static',filename='css/accueil2.css')}}">
+
+</head>
+<body>
+<a id="back" title="Page précedente" href="{{ url_for('back') }}"><i class="fa-solid fa-arrow-left"></i></a></h1>
+<a id="logout" title="Se déconnecter" href="{{ url_for('logout') }}"><i class="fa-solid fa-right-from-bracket"></i></a></h1>
+<div class="container">
+    <!-- ici on va permettre a la personne de creer des questions et visualiser sa creation -->
+    <div class="row">
+        <div class="box">
+            <img src="/static/imgs/CSV.png"><br>
+            <a href="{{ url_for('upload_file') }}" ><h3>Ajouter des étudiants</h3></a>
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
