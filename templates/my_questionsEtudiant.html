@@ -27,53 +27,49 @@
     <title>Mes questions </title>
     <script src="{{ url_for('static', filename='js/previewQ.js') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static',filename='css/question.css')}}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}">
+
 
 </head>
 
-<body>
-     <a id="menu" title="Revenir au menu principal" href="{{ url_for('accueil') }}"><i class="fa-solid fa-house-user"></i></a>
 
-    <h1 id="qtitle">Questions :</h1>
-    {% if questions|length == 0 %}
-        <p id="noqerr"> Aucune question crée par {{ user.first_name }} {{ user.last_name }}, cliquez ici <a href="{{ url_for('create_question') }}">créer</a> pour en ajouter une dans le système</p>
-    {% endif %}
-    {% for question in questions %}
-        <div class="question">
-            <button onclick="deleteQuestion(event,{{ question.id }})" class="btn btn-outline-danger delete-button">Supprimer</button>
-            <a href="{{ url_for('modify_question',question_id=question.id)}}"> <button class="btn btn-outline-warning">Modifier</button></a>
-            <a class="print" onclick="printDiv('print-{{ question.id }}')"><i class="fa fa-print">Imprimer</i></a>
+          <body>fts4
 
-            <div id="print-{{ question.id }}">
-                <h3 id="question-{{ question.id }}" class="question_txt">{{ question.question }}</h3>
-                <div id="preview-{{ question.id}}" class="preview"></div>
-                <h4>Réponses:</h4>
-                <ul>
-                    {% for answer in question.answers %}
-                        <li> {{ answer }}</li>
-                    {% endfor %}
-                </ul>
-                <h4>Réponses correctes:</h4>
-                <ul>
-                    {% for correct_answer in question.correct_answers %}
-                        <li>{{ correct_answer }}</li>
-                    {% endfor %}
-                </ul>
-                <div class="tags">
-                    {% for tag in question.tags %}
-                        <pre>#{{ tag }}</pre>
-                    {% endfor %}
-                </div>
+          <a id="menu" title="Revenir au menu principal" href="{{ url_for('accueil') }}"><i class="fa-solid fa-house-user"></i></a>
+          <p ><a href=my_questionsEtudiant><button class="button">Question suivante --> </button></a></p>
 
-            </div>
 
-        </div>
-        <br>
+          {% if questions|length == 0 %}
+          <p id="noqerr"> Les exos sont terminés </p> <!-- Si aucune question n'est crée il le remet a la page pour creer une question -->
+          {% endif %}
+          {% for question in questions %}
+          <div class="question">
 
-    {% endfor %}
-<!-- afficher les questions avec le bon format -->
-    <script>
-        previewQuestion()
-    </script>
+               <div id="print-{{ question.id }}">
+                  <h3 id="question-{{ question.id }}" class="question_txt">{{ question.question }}</h3>
+                  <div id="preview-{{ question.id}}" class="preview"></div>
+                  <h4>Réponses:</h4>
+                  <ul>
+                     {% for answer in question.answers %}
+                     <li> {{ answer }} <input type="checkbox" id="vehicle1" name="vehicle1" value="Bike"> </li>
+                     {% endfor %}
+                     <input type="Submit" value="Soumettre">
+                  </ul>
+               </div>
+
+          </div>
+          <br>
+
+          #How can I move to the next exam question while keeping the answer to the old question, How can I write this function with html and python
+
+
+
+          {% endfor %}
+             <!-- afficher les questions avec le bon format -->
+             <script>
+               previewQuestion()
+             </script>
+
 </body>
 
 </html>

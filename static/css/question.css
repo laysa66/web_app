@@ -55,6 +55,14 @@ margin: 0 auto;
     color: #6fc9ff;
     cursor: pointer;
 }
+
+.button {
+    position: fixed;
+    top: 0;
+    right: 0;
+    margin: 10px;
+    margin-top: 30px;
+
 .tags{
     font-weight: bold;
     display: flex;
