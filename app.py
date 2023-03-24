@@ -481,7 +481,7 @@ def loginEtudiant():
             if bcrypt.check_password_hash(user.password, form.password.data):
                 login_user(user)
                 return redirect(url_for('dashbordEtudiant'))
-    return render_template('loginEtudiant.html', form=form)
+    return redirect(url_for('login'))
 
 
 
@@ -493,10 +493,10 @@ def ChangePassword():
         old_password = request.form.get('old_password',False)
         new_password = request.form.get('new_password',False)
         user = User.query.filter_by(username=username).first()
-        passwo = User.query.filter_by(password=old_password).first()
+        passwo = bcrypt.check_password_hash(user.password, old_password)
         if user:
             if passwo:
-                user.password = new_password
+                user.password = bcrypt.generate_password_hash(new_password)
                 db.session.commit()
                 msg = "Changed successfully"
                 flash('Changed successfully.', 'success')
