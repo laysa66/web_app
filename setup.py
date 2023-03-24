@@ -27,6 +27,6 @@ setup(
         'zipp',
         'flask_change_password',
         'pandas',
-        "flask_socketio"
+        'Flask-SocketIO',
     ],
 )
