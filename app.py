@@ -351,12 +351,12 @@ def create_question():  # Page de création de question
         for i in range(1, 5):
             answers.append(
                 {
-                    "reponse": form["answers"][f"answer{i}"],
+                    "reponse": form["answers"][f"answer{i}"].replace("'", "''"),
                     "correcte": str(form["correct"][f"correct{i}"]).lower(),
                 }
             )
         new_question = Question(
-            question=form["question"],
+            question=form["question"].replace("'", "''"),
             id_user=current_user.id,
             answers=str(answers),
             tags=str(form["tags"]),
@@ -435,7 +435,11 @@ def personal_questions():  # Page d'affichage des questions
     qanda = []  # qanda = question and answers
     for question in questions:
         tags = json.loads(question.tags.replace("'", '"'))
-        answers = json.loads(question.answers.replace("'", '"'))
+        print(question.answers)
+        # on échappe les apostrophes pour que json.loads fonctionne
+        question.answers = question.answers.replace("'", '"')
+        
+        answers = json.loads(question.answers.replace('""', "'"))
         qanda.append(
             {
                 "id": question.id,
@@ -458,7 +462,9 @@ def all_questions():  # Page d'affichage des questions
     qanda = []
     for question in questions:
         tags = json.loads(question.tags.replace("'", '"'))
-        answers = json.loads(question.answers.replace("'", '"'))
+        question.answers = question.answers.replace("'", '"')
+        
+        answers = json.loads(question.answers.replace('""', "'"))
         qanda.append(
             {
                 "id": question.id,
