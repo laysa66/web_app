@@ -22,11 +22,9 @@
         <title>Enter Exam Code</title>
     </head>
     <body>
-    <form action="/exam" method="post">
-        <label for="exam_code">Exam Code:</label>
-        <input type="text" id="exam_code" name="exam_code">
-        <input type="submit" value="Submit">
-    </form>
+    <a href="{{ url_for('join_exam') }}">Join Exam</a>
+    <a href="{{ url_for('loginEtudiant') }}">Se déconnecter</a>
+
     </body>
 </div>
 </body>

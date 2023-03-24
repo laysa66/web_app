@@ -23,7 +23,6 @@ from wtforms.validators import InputRequired, Length, ValidationError,DataRequir
 from flask_change_password import ChangePassword, ChangePasswordForm, SetPasswordForm
 
 
-
 # utilisation du FLASK_LOGIN: https://flask-login.readthedocs.io/en/latest/
 # creation de la base de donnees LOCALE avec SQLALCHEMY: https://flask-sqlalchemy.palletsprojects.com/en/2.x/quickstart/
 # la difference entre SQLALCHEMY et SQLITE3: SQLAlchemy est une bibliothèque de mappage objet-relationnel pour Python qui
@@ -38,7 +37,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'thisisasecretkey'
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 app.secret_key = os.urandom(20)
@@ -78,13 +77,14 @@ class Exam(db.Model, UserMixin):  # table base de données
     id_user = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
     questions = db.Column(db.String(255), nullable=False)
     identifier = db.Column(db.String(255), nullable=False)
+    ended = db.Column(db.Boolean, nullable=False)
     
 class Answer(db.Model, UserMixin):  # table base de données
     id = db.Column(db.Integer, primary_key=True)
     id_user = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
     id_question = db.Column(db.Integer, db.ForeignKey(Question.id), nullable=False)
-    answer = db.Column(db.String(255), nullable=False)
-    id_exam = db.Column(db.Integer, db.ForeignKey(Exam.id), nullable=False)
+    answers = db.Column(db.String(255), nullable=False)
+    identifier = db.Column(db.Integer, db.ForeignKey(Exam.id), nullable=False)
 
 # utilisation de flask login pour la connexion et la déconnexion d'un utilisateur
 # ICI pour plus d'informations : https://youtu.be/71EU8gnZqZQ
@@ -148,8 +148,7 @@ class LoginForm(FlaskForm):
 
 
 class ExamCreationForm(FlaskForm):
-    questions = SelectMultipleField('Questions', choices=[], validators=[InputRequired()],
-                                    render_kw={"id": "questions", "class": "form-control"})
+    questions = SelectMultipleField('Choisissez les questions que vous souhaitez inclure dans votre examen', choices=[], validators=[DataRequired()])
     submit = SubmitField('Create Quiz', render_kw={"class": "btn btn-success", "id": "submit"})
 
 @app.route('/')
@@ -510,7 +509,7 @@ def ChangePassword():
     return render_template("ChangePassword.html")
 
 
-@app.route('/examCode', methods=['POST'])
+@app.route('/examCode', methods=['GET'])
 def examCode():
     exam_code = request.form['exam_code']
     #exam = Exam.query.filter_by(exam_code=exam_code).first()
@@ -547,24 +546,121 @@ def create_exam():
     form = ExamCreationForm()
     questions = Question.query.filter_by(id_user=current_user.id).all()
     form.questions.choices = [(question.id , question.question, question.tags ) for question in questions]
-    if form.validate_on_submit():
+    if request.method=='POST':
         print(request.form)
-        questions = Question.query.filter_by(id_user=current_user.id).all()
-        # Récupération des questions sélectionnées avec request.form
-        #selected_questions = [question for question in questions if str(question.id) in request.form]
-        selected_questions = []
+        # Récupération des id questions sélectionnées avec request.form
+        selected_questions = request.form.getlist('questions')
         identifier = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(6))
-        exam = Exam(id_user=current_user.id, questions=json.dumps([question.to_dict() for question in selected_questions]),
-                    num_questions=form.num_questions.data, identifier=identifier)
+        print(selected_questions)
+        exam = Exam(identifier=identifier, questions=json.dumps(selected_questions), id_user=current_user.id, ended=False)
         db.session.add(exam)
         db.session.commit()
         print('Exam created successfully')
-        return redirect(url_for('examCode',identifier=identifier))
+        # Si pas d'erreur, on emet un signal pour lancer l'examen
+        if exam:
+            emit('start_exam', identifier, broadcast=True, namespace='/')
+            print('Exam started')
+        return redirect(url_for('created_exam', identifier=identifier))
     else:
-        print(request.form)
+        print("Error while creating exam")
 
     return render_template('create_exam.html', form=form)
 
+@app.route('/created_exam/<identifier>', methods=['GET'])
+@login_required
+def created_exam(identifier):
+    return render_template('created_exam.html',identifier=identifier)
+
+# SocketIO pour l'examen
+@socketio.on('connect')
+def connect():
+    print('Client connected')
+
+@socketio.on('stop_exam')
+def stop_exam(identifier):
+    print('Exam stopped')
+    print(identifier)
+    # On met à jour l'examen en base de données
+    exam = Exam.query.filter_by(identifier=identifier).first()
+    exam.ended = True
+    db.session.commit()
+    emit('exam_stopped', identifier, broadcast=True)
+    
+@socketio.on('disconnect')
+def disconnect():
+    print('Client disconnected')
+    
+@socketio.on('join_exam')
+def join_exam(identifier):
+    # On vérifie si l'identifiant de l'examen est correct
+    if identifier in Exam.identifier and not Exam.identifier[identifier].ended:
+        # On récupère les questions de l'examen
+        questions = Question.query.filter(Question.id.in_(Exam.identifier[identifier])).all()
+        qanda = [] #qanda = question and answers
+        for question in questions:
+            answers = json.loads(question.answers.replace("'", '"'))
+            qanda.append(
+                {'id': question.id, 'question': question.question, 'answers': [item["reponse"] for item in answers],
+                 'correct_answers': [item["reponse"] for item in answers if item["correcte"] == "true"]})
+        # On envoie les questions à l'étudiant
+        emit('questions', qanda)
+    else:
+        emit('exam_not_found')
+   
+@socketio.on('answer')
+def answer(data):
+    # Ajouter la réponse à la base de données
+    print(data)
+    answer = Answer(id_user=data['id_user'], id_question=data['id_question'], answers=json.dumps(data['answer']), identifier = data['identifier'])
+    db.session.add(answer)
+    db.session.commit()
+    print('Réponse ajoutée de l\'étudiant'+str(data['id_user'])+' à la question '+str(data['id_question']))
+    
+        
+@app.route('/join_exam', methods=['GET', 'POST'])
+@login_required
+def join_exam():
+    if request.method == 'POST':
+        # Cas ou vide
+        if not request.form['identifier']:
+            return render_template('join_exam.html')
+        identifier = request.form['identifier']
+        exam = Exam.query.filter_by(identifier=identifier).first()
+        questions_ids = json.loads(exam.questions)
+        print(questions_ids)
+        # Récupérer les question par leur id dans la table exam
+        questions =  Question.query.filter(Question.id.in_(questions_ids)).all()
+        qanda = [] #qanda = question and answers
+        for question in questions:
+            answers = json.loads(question.answers.replace("'", '"'))
+            qanda.append(
+                {'id': question.id, 'question': question.question, 'answers': [item["reponse"] for item in answers],
+                 'correct_answers': [item["reponse"] for item in answers if item["correcte"] == "true"]})
+        print(qanda)
+        if exam:
+            if exam.ended:
+                return redirect(url_for('exam_ended'))
+            # si tout est ok, on envoie l'étudiant sur la page de l'examen
+            return redirect(url_for('exam', identifier=identifier, questions=json.dumps(qanda)))
+        else:
+            flash("Cet examen n'existe pas")
+            return redirect(url_for('etudiant'))
+    return render_template('join_exam.html')
+
+@app.route('/exam', methods=['GET'])
+@login_required
+def exam():
+    identifier = request.args.get('identifier')
+    questions = (request.args.get('questions'))
+    questions_json = json.loads(questions)
+    questions_len = len(questions_json)
+    id_user = current_user.id
+    return render_template('exam.html', identifier=identifier, questions=questions_json, questions_len=questions_len, id_user=id_user)
+
+@app.route('/exam_ended', methods=['GET', 'POST'])
+@login_required
+def exam_ended():
+    return render_template('exam_ended.html')    
 
 if __name__ == "__main__":
     # ''.join(random.choices(string.ascii_letters + string.digits, k=16))

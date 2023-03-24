@@ -88,11 +88,11 @@
           type="text"
           class="form-control"
           id="research_tag"
-          placeholder="Rechercher par tag"*
+          placeholder="Rechercher par tag"
         />
         <button type="button" class="btn btn-primary" id="search">Rechercher</button>
         <button type="button" class="btn btn-primary" id="reset">Réinitialiser</button>
-
+    
         <div class="form-group" id="questions-to-display">
         {% for question in form.questions.choices %}
         <div class="card mb-3">
@@ -100,11 +100,12 @@
             <div class="form-check">
               <input
                 type="checkbox"
-                name="{{question[0]}}"
-                id="{{question[0]}}"
+                name="questions"
+                value="{{ question[0] }}"
+                id="{{ question[0] }}"
               />
               <label
-                for="{{question[0]}}"
+                for="{{ question[0] }}"
                 id="question-to-display"
                 class="card-title"
               >

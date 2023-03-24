@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Examen</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<!-- Bootstrap CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+	<!-- jQuery library -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<!-- Popper JS -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+	<!-- Bootstrap JS -->
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<!-- Ajout de la librairie Socket.io -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.min.js"></script>
+
+</head>
+<body>
+
+<div class="container-fluid mt-5">
+	<h1>Examen  :  {{identifier}}</h1>
+	<hr>
+    {% set question_num = 0 %}
+    {% for question in questions %}
+    {% set question_num = loop.index %}
+	<div class="row" id="question-{{ question_num }}">
+		<div class="col-sm-6">
+			<h3>Question n°{{ question_num }}</h3>
+            <div id="id-question" style="display:none">{{ question.id }}</div>
+			<p><strong>{{ question.question }}</strong></p>
+		</div>
+		<div class="col-sm-6">
+			<h3>Réponse</h3>
+			<form>
+                {% set ans_num = 0 %}
+				{% for answer in question.answers %}
+                {% set ans_num = loop.index%}
+                <div class="form-group">
+                    <input type="checkbox" name="answer" value="{{ answer}}" id="answer-{{ ans_num }}">
+                    <label for="answer-{{ ans_num }}">{{ answer }}</label>
+				</div>
+                {% endfor %}
+				<button type="button" id="submit{{question_num}}" class="btn btn-primary">Soumettre</button>
+			</form>
+		</div>
+	</div>
+    <hr>
+    {% endfor %}
+</div>
+<form id="form" method="POST" action="{{ url_for('exam_ended') }}" style="display:none;"></form>
+<script>
+    var socket = io.connect('http://localhost:5000');
+    var question_num = {{ questions_len | safe }};
+    var identifier = "{{ identifier | safe }}";
+    var id_user = "{{ id_user | safe }}";
+    console.log(question_num);
+    socket.on('stopped_exam', function(data) {
+        alert('L\'examen a été stoppé par le professeur.');
+        // auto submit form to stop exam
+        document.getElementById('form').submit();
+    });
+    // On affiche uniquement la première Question
+    document.getElementById('question-1').style.display = 'block';
+    // On cache les autres questions
+    for (var i = 2; i <= question_num; i++) {
+        document.getElementById('question-' + i).style.display = 'none';
+    }
+    // On affiche la question suivante et si c'est la dernière on soumet le formulaire
+    function showNextQuestion() {
+        var current_question = document.querySelector('div[id^="question-"]:not([style*="display: none"])');
+        var current_question_num = current_question.id.replace('question-', '');
+        var next_question_num = parseInt(current_question_num) + 1;
+        if (next_question_num <= question_num) {
+            document.getElementById('question-' + next_question_num).style.display = 'block';
+            current_question.style.display = 'none';
+        } else {
+            document.getElementById('form').submit();
+        }
+    }
+    // On envoie la réponse à la question par socket.io
+    function sendAnswer(question_num) {
+        var answer = [];
+        var checkboxes = document.getElementsByName('answer');
+        for (var i = 0; i < checkboxes.length; i++) {
+            if (checkboxes[i].checked) {
+                answer.push(checkboxes[i].value);
+            }
+        }
+        console.log(answer);
+        socket.emit('answer', {
+            'id_question': document.getElementById('id-question').innerHTML,
+            'answer': answer,
+            'identifier': identifier,
+            'id_user': id_user
+        });
+    }
+    // Listener sur le bouton soumettre de la réponse
+    for (var i = 1; i <= question_num; i++) {
+        document.getElementById('submit' + i).addEventListener('click', function() {
+            sendAnswer(this.id.replace('submit', ''));
+            showNextQuestion();
+        });
+    } 
+</script>
+
+</body>
+</html>
