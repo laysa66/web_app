@@ -100,7 +100,7 @@ class Exam(db.Model, UserMixin):  # table base de données
     id_user = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
     questions = db.Column(db.String(255), nullable=False)
     identifier = db.Column(db.String(255), nullable=False)
-    ended = db.Column(db.Boolean, nullable=False)
+    ended = db.Column(db.Boolean, nullable=False, default=False)
 
 
 class Answer(db.Model, UserMixin):  # table base de données
@@ -784,14 +784,17 @@ def connect():
 
 
 @socketio.on("stop_exam")
-def stop_exam(identifier):
+def stop_exam(data):
     print("Exam stopped")
-    print(identifier)
+    print(data)
+    print(type(data))
     # On met à jour l'examen en base de données
-    exam = Exam.query.filter_by(identifier=identifier).first()
+    exam = Exam.query.filter_by(identifier=data["identifier"]).first()
+    print(exam)
+    print(type(exam))
     exam.ended = True
     db.session.commit()
-    emit("exam_stopped", identifier, broadcast=True)
+    emit("exam_stopped", data['identifier'], broadcast=True, namespace="/")
 
 
 @socketio.on("disconnect")
@@ -809,7 +812,9 @@ def join_exam(identifier):
         ).all()
         qanda = []  # qanda = question and answers
         for question in questions:
-            answers = json.loads(question.answers.replace("'", '"'))
+            ans = question.answers.replace("'", '"')
+            answers = json.loads(ans.replace('""', "'"))
+            
             qanda.append(
                 {
                     "id": question.id,
@@ -863,7 +868,8 @@ def join_exam():
         questions = Question.query.filter(Question.id.in_(questions_ids)).all()
         qanda = []  # qanda = question and answers
         for question in questions:
-            answers = json.loads(question.answers.replace("'", '"'))
+            ans = question.answers.replace("'", '"')
+            answers = json.loads(ans.replace('""', "'"))
             qanda.append(
                 {
                     "id": question.id,

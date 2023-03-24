@@ -30,7 +30,7 @@
     var identifier = document.getElementById("identifier").innerHTML;
     button = document.querySelector('button');
     button.addEventListener('click', function() {
-        socket.emit('stop_exam', {data: identifier});
+        socket.emit('stop_exam', {identifier: identifier});
     });
     socket.on('stopped_exam', function(data) {
         console.log(data);
