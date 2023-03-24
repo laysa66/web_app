@@ -404,7 +404,7 @@ def logoutEtudiant_user():
 @login_required
 def logoutEtudiant():
     logout_user()
-    return redirect(url_for('loginEtudiant'))
+    return redirect(url_for('login'))
 
 @app.route('/registerEtudiant', methods=['GET', 'POST'])
 def registerEtudiant():
