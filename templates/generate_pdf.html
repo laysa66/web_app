@@ -1,5 +1,5 @@
-<form>
-    <input type="text" name="name" placeholder="Label des questions" />
+<form action="{{url_for('generate_pdf')}}" method="post">
+    <input type="text" name="tag" placeholder="Label des questions" />
     <input type="text" name="nb_questions" placeholder="Nombre de questions" />
     <button type="submit">Générer</button>
 </form>

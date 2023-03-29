@@ -924,6 +924,7 @@ def exam_ended():
 def generate_pdf():
     if request.method == "POST":
         print(request.form)
+        return render_template("generate_pdf.html")
     else:
         return render_template("generate_pdf.html")
 
