@@ -919,6 +919,14 @@ def exam_ended():
     return render_template("exam_ended.html")
 
 
+@app.route("/generate_pdf", methods=["GET", "POST"])
+@login_required
+def generate_pdf():
+    if request.method == "POST":
+        print(request.form)
+    else:
+        return render_template("generate_pdf.html")
+
 if __name__ == "__main__":
     # ''.join(random.choices(string.ascii_letters + string.digits, k=16))
     with app.app_context():
