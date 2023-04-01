@@ -4,42 +4,26 @@ import os
 import secrets
 import string
 from datetime import datetime
+
 import pandas as pd
-from flask import (
-    Flask,
-    flash,
-    jsonify,
-    redirect,
-    render_template,
-    request,
-    session,
-    url_for,
-)
+from flask import (Flask, flash, jsonify, redirect, render_template, request,
+                   session, url_for, send_file)
 from flask_bcrypt import Bcrypt
-from flask_change_password import ChangePassword, ChangePasswordForm, SetPasswordForm
-from flask_login import (
-    LoginManager,
-    UserMixin,
-    current_user,
-    login_required,
-    login_user,
-    logout_user,
-)
+from flask_change_password import (ChangePassword, ChangePasswordForm,
+                                   SetPasswordForm)
+from flask_login import (LoginManager, UserMixin, current_user, login_required,
+                         login_user, logout_user)
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm, Form
 from werkzeug.utils import secure_filename
-from wtforms import (
-    BooleanField,
-    PasswordField,
-    SelectField,
-    SelectMultipleField,
-    StringField,
-    SubmitField,
-    TextAreaField,
-)
-from wtforms.validators import InputRequired, Length, ValidationError, DataRequired
-from flask_change_password import ChangePassword, ChangePasswordForm, SetPasswordForm
+from wtforms import (BooleanField, PasswordField, SelectField,
+                     SelectMultipleField, StringField, SubmitField,
+                     TextAreaField, IntegerField)
+from wtforms.validators import (DataRequired, InputRequired, Length,
+                                ValidationError)
+from fpdf import FPDF
+import random
 
 
 # utilisation du FLASK_LOGIN: https://flask-login.readthedocs.io/en/latest/
@@ -222,6 +206,27 @@ class ExamCreationForm(FlaskForm):
     )
     submit = SubmitField(
         "Create Quiz", render_kw={"class": "btn btn-success", "id": "submit"}
+    )
+
+class PdfCreationForm(FlaskForm):
+    tags=SelectMultipleField(
+        "Choisissez les tags que vous souhaitez inclure dans votre pdf",
+        choices=[],
+        validators=[DataRequired()],
+        render_kw={"id": "tags", "class": "form-control"},
+    )
+    nb_questions=IntegerField(
+        "Choisissez le nombre de questions que vous souhaitez inclure dans votre pdf",
+        validators=[DataRequired()],
+        render_kw={"id": "nb_questions", "class": "form-control"},
+    )
+    nb_copies=IntegerField(
+        "Choisissez le nombre de copies que vous souhaitez inclure dans votre pdf",
+        validators=[DataRequired()],
+        render_kw={"id": "nb_copies", "class": "form-control"},
+    )
+    submit = SubmitField(
+        "Create PDF", render_kw={"class": "btn btn-success", "id": "submit"}
     )
 
 
@@ -922,11 +927,55 @@ def exam_ended():
 @app.route("/generate_pdf", methods=["GET", "POST"])
 @login_required
 def generate_pdf():
-    if request.method == "POST":
-        print(request.form)
-        return render_template("generate_pdf.html")
-    else:
-        return render_template("generate_pdf.html")
+    #On récupère les tags de toutes les questions de l'utilisateur
+    tags = Question.query.with_entities(Question.tags).filter_by(id_user=current_user.id).all()
+    form = PdfCreationForm()
+    form.tags.choices = list(set([(tag[0], tag[0]) for tag in tags]))
+    if form.validate_on_submit():
+        tags = form.tags.data
+        print(tags)
+        nb_questions = form.nb_questions.data
+        print(nb_questions)
+        nb_copies = form.nb_copies.data
+        print(nb_copies)
+        # On récupère les questions
+        questions = Question.query.filter(Question.tags.in_(tags)).all()
+        qanda = []  # qanda = question and answers
+        for question in questions:
+            ans = question.answers.replace("'", '"')
+            answers = json.loads(ans.replace('""', "'"))
+            qanda.append(
+                {
+                    "id": question.id,
+                    "question": question.question,
+                    "answers": [item["reponse"] for item in answers],
+                    "correct_answers": [
+                        item["reponse"]
+                        for item in answers
+                        if item["correcte"] == "true"
+                    ],
+                }
+            )
+        # On génère le pdf
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+        for i in range(nb_copies):
+            pdf.cell(200, 10, txt="Copie n°" + str(i + 1), ln=1, align="C")
+            for j in range(nb_questions):
+                question = random.choice(qanda)
+                pdf.cell(200, 10, txt=question["question"], ln=1, align="L")
+                for answer in question["answers"]:
+                    pdf.cell(200, 10, txt=answer, ln=1, align="L")
+                pdf.cell(200, 10, txt="", ln=1, align="L")
+            pdf.cell(200, 10, txt="", ln=1, align="L")
+        
+            pdf.add_page()
+        pdf.output("test.pdf")
+        return send_file("test.pdf", as_attachment=True)
+
+    return render_template("generate_pdf.html", form=form)
+
 
 if __name__ == "__main__":
     # ''.join(random.choices(string.ascii_letters + string.digits, k=16))
