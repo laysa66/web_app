@@ -23,7 +23,6 @@ from wtforms.validators import InputRequired, Length, ValidationError,DataRequir
 from flask_change_password import ChangePassword, ChangePasswordForm, SetPasswordForm
 
 
-
 # utilisation du FLASK_LOGIN: https://flask-login.readthedocs.io/en/latest/
 # creation de la base de donnees LOCALE avec SQLALCHEMY: https://flask-sqlalchemy.palletsprojects.com/en/2.x/quickstart/
 # la difference entre SQLALCHEMY et SQLITE3: SQLAlchemy est une bibliothèque de mappage objet-relationnel pour Python qui
@@ -73,6 +72,12 @@ class Question(db.Model, UserMixin):  # table base de données
     answers = db.Column(db.String(255), nullable=False)
     tags = db.Column(db.String(255), nullable=False)
 
+class QuestionOuverte(db.Model, UserMixin):
+    id = db.Column(db.Integer, primary_key=True)
+    id_user = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
+    question = db.Column(db.String(255), nullable=False)
+    activated = db.Column(db.Boolean, nullable=False)
+
 class Exam(db.Model, UserMixin):  # table base de données
     id = db.Column(db.Integer, primary_key=True)
     id_user = db.Column(db.Integer, db.ForeignKey(User.id), nullable=False)
@@ -82,6 +87,13 @@ class Exam(db.Model, UserMixin):  # table base de données
 
 # utilisation de flask login pour la connexion et la déconnexion d'un utilisateur
 # ICI pour plus d'informations : https://youtu.be/71EU8gnZqZQ
+
+
+class ExamCreationForm(FlaskForm):
+    questions = SelectMultipleField('Select Questions', coerce=int, validators=[DataRequired()], choices=[])
+    num_questions = SelectField('Number of Questions', choices=[(str(i), str(i)) for i in range(1, 11)],
+                                validators=[DataRequired()])
+    submit = SubmitField('Create Quiz')
 
 
 class RegisterForm(FlaskForm):
@@ -105,9 +117,9 @@ class RegisterForm(FlaskForm):
         if existing_user_username:
             return True
         return False
-
-
 # classe pour le formulaire de creation de question
+
+
 class QuestionForm(FlaskForm):
     question = TextAreaField('Question', validators=[InputRequired()],
                              render_kw={"rows": "4", "id": "question", "class": "form-control"})
@@ -128,9 +140,9 @@ class QuestionForm(FlaskForm):
                                render_kw={"id": "tags", "class": "form-control"})
 
     submit = SubmitField('Créer la question', render_kw={"class": "btn btn-success"})
-
-
 # class login pour la connexion
+
+
 class LoginForm(FlaskForm):
     username = StringField(validators=[InputRequired(), Length(min=4, max=20)],
                            render_kw={"placeholder": "Nom d'utilisateur", "id": "username"})
@@ -148,10 +160,9 @@ def accueil():
     # if current_user.type_user != 'teacher':
     # return render_template('etudiant.html', user=current_user)
     return render_template('accueil.html', user=current_user)
-
-
 # route pour aller a la page de connexion (login) et  verifier si le nom d'utilisateur
 # et le mot de passe sont corrects,  si oui, on va a la page d'accueil
+
 @app.route('/accueil2', methods=['GET', 'POST'])
 def accueil2():
     return render_template('accueil2.html', user=current_user)
@@ -159,6 +170,7 @@ def accueil2():
 @app.route('/next', methods=['GET'])
 def nextPage():
     return redirect(url_for('accueil2'))
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -177,14 +189,14 @@ def login():
     return render_template('login.html', form=form)
 
 
+
+
 @app.route('/etudiant ', methods=['GET', 'POST'])
 def etudiant():
     return render_template('etudiant.html', user=current_user)
-
-
-
-
 # route pour aller a la page de deconnexion (logout) et  deconnecter l'utilisateur
+
+
 @app.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout():
@@ -200,9 +212,11 @@ def next():
 @app.route('/back', methods=['GET', 'POST'])
 def back():
     return redirect(url_for('accueil'))
-
-
 # route pour aller a la page d'inscription (register)
+
+
+# ----------------------------------------------------------------------------------------------------------------------------#
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     # si l'utilisateur est connecté on le redirige vers la page dashboard
@@ -224,24 +238,29 @@ def register():
         return redirect(url_for('login'))
 
     return render_template('register.html', form=form, error="")
-
-
-# ----------------------------------------------------------------------------------------------------------------------------#
-
 # partie creation de question
+
+
 def validate_question(question):
     existing_question = Question.query.filter_by(
         question=question).first()
     if existing_question:
         return True
     return False
-
-
 # fonction pour les reponses des questions
+
+
 def validate_question_answers(i, q, answers, tags):
     existing = Question.query.filter(Question.question == q, Question.id == i, Question.answers == answers,
                                      Question.tags == tags).first()
     if existing:
+        return True
+    return False
+
+def validate_question_ouverte(question):
+    existing_question = QuestionOuverte.query.filter_by(
+        question=question).first()
+    if existing_question:
         return True
     return False
 
@@ -270,7 +289,77 @@ def create_question():  # Page de création de question
             return "Il y a eu un problème lors de l'ajout de la question"
     return render_template("create_question.html", error="")
 
+# route pour aller a la page de creation de question ouverte
 
+global tags
+tags = {}
+
+@app.route("/create_question_open", methods=["GET", "POST"])  # Chemin de la page de création de question ouverte
+@login_required
+def create_question_open():  # Page de création de question
+    if current_user.type_user != 'teacher': # si l'utilisateur n'est pas un enseignant on le redirige vers la page d'accueil
+        return redirect(url_for('accueil'))
+
+    if request.method == 'POST':
+        form = json.loads(request.data)
+        new_question = QuestionOuverte(id_user= current_user.id, question=form["question"], activated=False)
+        try:
+            if validate_question_ouverte(form["question"]):
+                return jsonify({'success': False, 'error': 'Question déjà existante !'})
+            db.session.add(new_question)
+            db.session.commit()
+            # send json return data to client
+            return jsonify({'success': True, 'message': 'Question créee avec succès !'})
+        except Exception as e:
+            print(e, 'error')
+            return "Il y a eu un problème lors de l'ajout de la question"
+
+    return render_template("create_question_ouverte.html")
+
+@app.route("/open_questions", methods=["GET", "POST"])  # Chemin de la page de création de question
+@login_required
+def open_questions():  # Page d'affichage des questions
+    questions = QuestionOuverte.query.filter_by(id_user=current_user.id).all()
+    return render_template("open_questions.html", questions=questions, user=current_user)
+
+
+@app.route('/open_question/<int:question_id>', methods=['GET'])
+@login_required
+def open_question(question_id):
+    question = QuestionOuverte.query.filter_by(id=question_id).first()
+    if question is None:
+        return f"La question dont l'id {question_id} n'existe pas", 404
+
+    return render_template('cloudWords.html',question=question, user=current_user)
+@socketio.on('tagAdd')
+def handle_tadAdd(data):
+    global tags
+    tags = data
+    emit('tagAdded', data,broadcast=True, include_self=False)
+
+@socketio.on('connect')
+def client_connect_open_question():
+    emit('connected', tags, broadcast=False) # send the tags only to the connected client
+
+@socketio.on('questionActivated')
+def handle_questionActivated(id):
+    question = QuestionOuverte.query.filter_by(id=id).first()
+    question.activated = True
+    db.session.commit()
+    emit('questionActivated', id, broadcast=True, include_self=False)
+
+@socketio.on('questionDeactivated')
+def handle_questionDesactivated(id):
+    question = QuestionOuverte.query.filter_by(id=id).first()
+    question.activated = False
+    db.session.commit()
+    emit('questionDeactivated', id, broadcast=True, include_self=False)
+
+@socketio.on('tagsRemoved')
+def handle_tagsRemoved():
+    global tags
+    tags = {}
+    emit('tagsRemoved', broadcast=True, include_self=False)
 # route pour aller a la page de modification de question
 @app.route("/modify_question/<int:question_id>", methods=["GET", "POST"])
 @login_required
@@ -353,17 +442,16 @@ def delete_question(question_id):  # Fonction de suppression de question
     else:
         return jsonify({'message': f"La question dont l'id {question_id} n'existe pas dans la base de données",
                         'status': 404}), 404
-
-
 # fonction qui recupere les bonnes reponses, recupere le tableau du dictionnaire elle parcoure la liste, si la reponse est true
 # elle affiche que celles avec true
+
+
 def getCorrectAnswers(answers):
     correct_answers = []
     for answer in answers:
         if answer["correcte"] == "true":
             correct_answers.append(answer["reponse"])
     return correct_answers
-
 
 def getAnswers(answers):
     all_answers = []
@@ -379,13 +467,13 @@ def accueilEtudiant():
 @login_required
 def dashbordEtudiant():
     return render_template('dashbordEtudiant.html')
-
 #csv part
 ALLOWED_EXTENSIONS = set(['csv'])
+
+
 def allowed_file(filename):# the filename contains the csv extension
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 
 def logoutEtudiant_user():
     pass
@@ -417,6 +505,7 @@ def registerEtudiant():
         return redirect(url_for('login'))
 
     return render_template('registerEtudiant.html', form=form, error="")
+
 
 """@app.route('/ChangePassword', methods=["GET", "POST"])
 def ChangePassword():
@@ -459,9 +548,10 @@ def upload_file():
             return jsonify({'success': True, 'message': f"Fichier importé avec succès !\n{errtext}"})
     # Render an HTML form that allows the user to select a CSV file
     return render_template('upload.html')
-
-
 # partie de mahmoud
+
+
+
 @app.route('/loginEtudiant', methods=['GET', 'POST'])
 def loginEtudiant():
     form = LoginForm()
@@ -472,7 +562,6 @@ def loginEtudiant():
                 login_user(user)
                 return redirect(url_for('dashbordEtudiant'))
     return render_template('loginEtudiant.html', form=form)
-
 
 
 @app.route('/ChangePassword', methods=["GET", "POST"])
@@ -497,7 +586,6 @@ def ChangePassword():
         else:
             return render_template("ChangePassword.html")
     return render_template("ChangePassword.html")
-
 
 @app.route('/examCode', methods=['POST'])
 def examCode():
@@ -528,13 +616,7 @@ def personal_questions_Etudiant():  # Page d'affichage des questions
              'correct_answers': [item["reponse"] for item in answers if item["correcte"] == "true"]})
 
     return render_template("my_questionsEtudiant.html", questions=qanda, user=current_user)
-
 # CREATION EXAMEN
-class ExamCreationForm(FlaskForm):
-    questions = SelectMultipleField('Select Questions', coerce=int, validators=[DataRequired()], choices=[])
-    num_questions = SelectField('Number of Questions', choices=[(str(i), str(i)) for i in range(1, 11)],
-                                validators=[DataRequired()])
-    submit = SubmitField('Create Quiz')
 
 
 @app.route('/create_exam', methods=['GET', 'POST'])
@@ -556,8 +638,10 @@ def create_exam():
     return render_template('create_exam.html', form=form)
 
 
+
+
 if __name__ == "__main__":
-    # ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+
     with app.app_context():
         db.create_all()
     socketio.run(app,debug = True)
