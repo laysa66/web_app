@@ -232,10 +232,13 @@ ul.cloud a:hover::before {
             socket.emit('tagAdd', words)
         })
 
-        document.getElementById("deleteAnswers").addEventListener('click', (event) => {
-            event.preventDefault()
-            deleteAnswers()
-        })
+        {% if question.id_user == user.id %}
+            document.getElementById("deleteAnswers").addEventListener('click', (event) => {
+                event.preventDefault()
+                deleteAnswers()
+            })
+        {% endif %}
+
 
         socket.on('tagAdded', (data) => {
             words = data
