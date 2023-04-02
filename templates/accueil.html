@@ -8,8 +8,8 @@
     <link rel="stylesheet" href="{{ url_for('static',filename='css/accueil.css')}}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
     <title>Accueil</title>
-</head>
 
+</head>
 <body>
 <div class="topcontainner" >
     <h1 id="title">Mon espace personnel , {{ user.first_name }} {{ user.last_name }}
@@ -42,16 +42,21 @@
             </div>
             <!-- ici avec creer examen on va permettre a la personne de creer un examen-->
             <div class="box">
-                <img src=""></br>
+                <img src="/static/imgs/e22.jpg"></br>
                 <a href="{{url_for('create_exam')}}"> <h3>Créer un examen</h3></a>
             </div>
-            <!-- ici on va permettre de créer un pdf avec des questions -->
             <div class="box">
-                <img src=""></br>
-                <a href="{{url_for('generate_pdf')}}"> <h3>Générer un pdf</h3></a>
+                <img src="/static/imgs/e20.jpg"><br>
+                <a href="{{ url_for('create_question_open') }}"> <h3>Créer une question ouverte</h3></a>
             </div>
-        </div>
+            <!-- ici on va creer la page qui prend vers les questions ouvertes-->
+            <div class="box">
+                <img src="/static/imgs/e15.jpg"><br>
+                <a href="{{ url_for('open_questions') }}"> <h3>Voir les questions ouvertes</h3></a>
+            </div>
+
     </div>
+
 </div>
 </body>
 

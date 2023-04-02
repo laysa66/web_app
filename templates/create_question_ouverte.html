@@ -1,0 +1,65 @@
+<!-- page de creation de question -->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Mes questions </title>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"  crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+
+    <script src="{{ url_for('static', filename='js/question.js') }}"></script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/createquestion.css') }}">
+</head>
+
+<body>
+ <a id="menu" title="Revenir au menu principal" href="{{ url_for('accueil') }}"><i class="fa-solid fa-house-user"></i></a>
+
+ <div class="container">
+        <form method="POST" action="" id="form" class="mx-auto w-50">
+            <div class="form-group">
+                <label for="question">Question :</label>
+                <textarea class="form-control" id="question" name="question" required="" rows="4" data-lt-tmp-id="lt-445189" spellcheck="false" data-gramm="false"></textarea>
+            </div>
+            <input class="btn btn-success" id="submit" name="submit" type="submit" value="Créer la question">
+            <p id="error">{{ error }}</p>
+        </form>
+
+ </div>
+
+</body>
+<script>
+    // prevent default when submitted form
+    $('#form').submit(function(e) {
+        e.preventDefault()
+        let question = $('#question').val()
+
+        let data = {
+            question: question
+        }
+        fetch('/create_question_open', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        }).then(response => response.json())
+        .then(data => {
+            if (!data.success) {
+                $('#error').text(data.error)
+            } else {
+                alert(data.message)
+                window.location.href = "/open_questions"
+            }
+        })
+    });
+</script>
+
+</html>

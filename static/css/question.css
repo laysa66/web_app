@@ -42,7 +42,7 @@ margin: 0 auto;
     text-align: center;
 }
 
-.print :hover {
+.Open :hover {
     cursor: pointer;
     color : #6fc9ff;
 }
