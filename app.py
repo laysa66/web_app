@@ -98,11 +98,11 @@ class ExamCreationForm(FlaskForm):
 
 class RegisterForm(FlaskForm):
     username = StringField(validators=[InputRequired(), Length(min=4, max=20)],
-                           render_kw={"placeholder": "Pseudonyme", "id": "username"})
+                           render_kw={"placeholder": "Pseudonyme", "id": "username", "autocomplete":"off"})
     firstname = StringField(validators=[InputRequired(), Length(min=4, max=150)],
-                            render_kw={"placeholder": "Nom", "id": "firstname"})
+                            render_kw={"placeholder": "Nom", "id": "firstname" , "autocomplete":"off"})
     lastname = StringField(validators=[InputRequired(), Length(min=4, max=150)],
-                           render_kw={"placeholder": "Prénom", "id": "lastname"})
+                           render_kw={"placeholder": "Prénom", "id": "lastname", "autocomplete":"off"})
     password = PasswordField(validators=[InputRequired(), Length(min=8, max=20)],
                              render_kw={"placeholder": "Mot de passe", "id": "password"})
     select_type_user = SelectField('Type d\'utilisateur', choices=[('teacher', 'Professeur'), ('student', 'Etudiant')],
@@ -319,8 +319,16 @@ def create_question_open():  # Page de création de question
 @app.route("/open_questions", methods=["GET", "POST"])  # Chemin de la page de création de question
 @login_required
 def open_questions():  # Page d'affichage des questions
+    if current_user.type_user != 'teacher': # si l'utilisateur n'est pas un enseignant on le redirige vers la page d'accueil
+        return redirect(url_for('etudiant'))
     questions = QuestionOuverte.query.filter_by(id_user=current_user.id).all()
-    return render_template("open_questions.html", questions=questions, user=current_user)
+    return render_template("open_questions.html", questions=questions, user=current_user)\
+
+@app.route("/open_questions_all", methods=["GET", "POST"])  # Chemin de la page de création de question
+@login_required
+def open_questions_all():  # Page d'affichage des questions
+    questions = QuestionOuverte.query.all()
+    return render_template("open_questions_all.html", questions=questions, user=current_user)
 
 
 @app.route('/open_question/<int:question_id>', methods=['GET'])
@@ -459,69 +467,17 @@ def getAnswers(answers):
         all_answers.append(answer["reponse"])
     return all_answers
 
-@app.route('/accueilEtudiant')
-def accueilEtudiant():
-    return render_template('accueilEtudiant.html')
-
-@app.route('/dashbordEtudiant',methods=['GET', 'POST'])
-@login_required
-def dashbordEtudiant():
-    return render_template('dashbordEtudiant.html')
-#csv part
-ALLOWED_EXTENSIONS = set(['csv'])
 
 
-def allowed_file(filename):# the filename contains the csv extension
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def logoutEtudiant_user():
-    pass
-
-@app.route('/logoutEtudiant', methods=['GET', 'POST'])
-@login_required
-def logoutEtudiant():
-    logout_user()
-    return redirect(url_for('loginEtudiant'))
-
-@app.route('/registerEtudiant', methods=['GET', 'POST'])
-def registerEtudiant():
-    # si l'utilisateur est connecté on le redirige vers la page dashboard
-    if current_user.is_authenticated:
-        return redirect(url_for('accueilEtudiant'))
-    form = RegisterForm()
-    if form.validate_on_submit():
-        hashed_password = bcrypt.generate_password_hash(form.password.data)
-        new_user = User(username=form.username.data, password=hashed_password, first_name=form.firstname.data,
-                        last_name=form.lastname.data)
-        try:
-            if form.validate_username(form.username):
-                return render_template('registerEtudiant.html', form=form, error="Pseudunyme déjà utilisé")
-            db.session.add(new_user)
-            db.session.commit()
-        except Exception as e:
-            print(e)
-            return "Il y a eu un problème lors de l'inscription"
-        return redirect(url_for('login'))
-
-    return render_template('registerEtudiant.html', form=form, error="")
 
 
-"""@app.route('/ChangePassword', methods=["GET", "POST"])
-def ChangePassword():
-    if request.method == "POST":
-        username = request.form['username']
-        newPassword = request.form['newpassword']
-        user = User.query.filter_by(username=username).first()
-        if user:
-            user.password = newPassword
-            db.session.commit()
-            msg = "Changed successfully"
-            return render_template("ChangePassword.html", success=msg)
-        else:
-            error = "Username not found"
-            return render_template("ChangePassword.html", error=error)
-    return render_template("ChangePassword.html")"""
+
+
+
+
+
+
+
 
 
 @login_required
@@ -548,20 +504,10 @@ def upload_file():
             return jsonify({'success': True, 'message': f"Fichier importé avec succès !\n{errtext}"})
     # Render an HTML form that allows the user to select a CSV file
     return render_template('upload.html')
-# partie de mahmoud
 
 
 
-@app.route('/loginEtudiant', methods=['GET', 'POST'])
-def loginEtudiant():
-    form = LoginForm()
-    if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
-        if user:
-            if bcrypt.check_password_hash(user.password, form.password.data):
-                login_user(user)
-                return redirect(url_for('dashbordEtudiant'))
-    return render_template('loginEtudiant.html', form=form)
+
 
 
 @app.route('/ChangePassword', methods=["GET", "POST"])

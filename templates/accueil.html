@@ -42,10 +42,19 @@
             </div>
             <!-- ici avec creer examen on va permettre a la personne de creer un examen-->
             <div class="box">
-                <img src=""></br>
+                <img src="/static/imgs/e22.jpg"></br>
                 <a href="{{url_for('create_exam')}}"> <h3>Créer un examen</h3></a>
             </div>
-        </div>
+            <div class="box">
+                <img src="/static/imgs/e20.jpg"><br>
+                <a href="{{ url_for('create_question_open') }}"> <h3>Créer une question ouverte</h3></a>
+            </div>
+            <!-- ici on va creer la page qui prend vers les questions ouvertes-->
+            <div class="box">
+                <img src="/static/imgs/e15.jpg"><br>
+                <a href="{{ url_for('open_questions') }}"> <h3>Voir les questions ouvertes</h3></a>
+            </div>
+
     </div>
 
 </div>
