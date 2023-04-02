@@ -1,30 +1,31 @@
 import csv
 import json
 import os
+import random
 import secrets
 import string
 from datetime import datetime
 
 import pandas as pd
 from flask import (Flask, flash, jsonify, redirect, render_template, request,
-                   session, url_for, send_file)
+                   send_file, session, url_for)
 from flask_bcrypt import Bcrypt
 from flask_change_password import (ChangePassword, ChangePasswordForm,
                                    SetPasswordForm)
 from flask_login import (LoginManager, UserMixin, current_user, login_required,
                          login_user, logout_user)
-from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_socketio import SocketIO, emit
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm, Form
+from fpdf import FPDF
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
 from werkzeug.utils import secure_filename
-from wtforms import (BooleanField, PasswordField, SelectField,
+from wtforms import (BooleanField, IntegerField, PasswordField, SelectField,
                      SelectMultipleField, StringField, SubmitField,
-                     TextAreaField, IntegerField)
+                     TextAreaField)
 from wtforms.validators import (DataRequired, InputRequired, Length,
                                 ValidationError)
-from fpdf import FPDF
-import random
-
 
 # utilisation du FLASK_LOGIN: https://flask-login.readthedocs.io/en/latest/
 # creation de la base de donnees LOCALE avec SQLALCHEMY: https://flask-sqlalchemy.palletsprojects.com/en/2.x/quickstart/
@@ -208,19 +209,20 @@ class ExamCreationForm(FlaskForm):
         "Create Quiz", render_kw={"class": "btn btn-success", "id": "submit"}
     )
 
+
 class PdfCreationForm(FlaskForm):
-    tags=SelectMultipleField(
+    tags = SelectMultipleField(
         "Choisissez les tags que vous souhaitez inclure dans votre pdf",
         choices=[],
         validators=[DataRequired()],
         render_kw={"id": "tags", "class": "form-control"},
     )
-    nb_questions=IntegerField(
+    nb_questions = IntegerField(
         "Choisissez le nombre de questions que vous souhaitez inclure dans votre pdf",
         validators=[DataRequired()],
         render_kw={"id": "nb_questions", "class": "form-control"},
     )
-    nb_copies=IntegerField(
+    nb_copies = IntegerField(
         "Choisissez le nombre de copies que vous souhaitez inclure dans votre pdf",
         validators=[DataRequired()],
         render_kw={"id": "nb_copies", "class": "form-control"},
@@ -324,6 +326,7 @@ def register():
 
 # ----------------------------------------------------------------------------------------------------------------------------#
 
+
 # partie creation de question
 def validate_question(question):
     existing_question = Question.query.filter_by(question=question).first()
@@ -417,7 +420,9 @@ def modify_question(question_id):
             return jsonify(
                 {"success": True, "message": "Question modifiée avec succès !"}
             )
-        except Exception as e:  # Si il y a une erreur lors de la modification de la question
+        except (
+            Exception
+        ) as e:  # Si il y a une erreur lors de la modification de la question
             print(e)
             return "Il y a eu un problème lors de la modification de la question"
     else:
@@ -443,7 +448,7 @@ def personal_questions():  # Page d'affichage des questions
         print(question.answers)
         # on échappe les apostrophes pour que json.loads fonctionne
         question.answers = question.answers.replace("'", '"')
-        
+
         answers = json.loads(question.answers.replace('""', "'"))
         qanda.append(
             {
@@ -468,7 +473,7 @@ def all_questions():  # Page d'affichage des questions
     for question in questions:
         tags = json.loads(question.tags.replace("'", '"'))
         question.answers = question.answers.replace("'", '"')
-        
+
         answers = json.loads(question.answers.replace('""', "'"))
         qanda.append(
             {
@@ -799,7 +804,7 @@ def stop_exam(data):
     print(type(exam))
     exam.ended = True
     db.session.commit()
-    emit("exam_stopped", data['identifier'], broadcast=True, namespace="/")
+    emit("exam_stopped", data["identifier"], broadcast=True, namespace="/")
 
 
 @socketio.on("disconnect")
@@ -819,7 +824,7 @@ def join_exam(identifier):
         for question in questions:
             ans = question.answers.replace("'", '"')
             answers = json.loads(ans.replace('""', "'"))
-            
+
             qanda.append(
                 {
                     "id": question.id,
@@ -927,51 +932,101 @@ def exam_ended():
 @app.route("/generate_pdf", methods=["GET", "POST"])
 @login_required
 def generate_pdf():
-    #On récupère les tags de toutes les questions de l'utilisateur
-    tags = Question.query.with_entities(Question.tags).filter_by(id_user=current_user.id).all()
+    # On récupère les tags de toutes les questions de l'utilisateur
+    tags_list = (
+        Question.query.with_entities(Question.tags)
+        .filter_by(id_user=current_user.id)
+        .all()
+    )
     form = PdfCreationForm()
-    form.tags.choices = list(set([(tag[0], tag[0]) for tag in tags]))
+    # On enlève les doublons
+    choices = set()
+    for tags in tags_list:
+        for tag in eval(tags[0]):
+            choices.add(tag)
+    choices = list(choices)
+    # On ajoute les tags au formulaire
+    form.tags.choices = choices
     if form.validate_on_submit():
+        # On récupère les données du formulaire
         tags = form.tags.data
-        print(tags)
+
+        print("Tags = " + str(tags))
         nb_questions = form.nb_questions.data
-        print(nb_questions)
+        print("Nb questions :" + str(nb_questions))
         nb_copies = form.nb_copies.data
-        print(nb_copies)
-        # On récupère les questions
-        questions = Question.query.filter(Question.tags.in_(tags)).all()
-        qanda = []  # qanda = question and answers
-        for question in questions:
-            ans = question.answers.replace("'", '"')
-            answers = json.loads(ans.replace('""', "'"))
-            qanda.append(
-                {
-                    "id": question.id,
-                    "question": question.question,
-                    "answers": [item["reponse"] for item in answers],
-                    "correct_answers": [
-                        item["reponse"]
-                        for item in answers
-                        if item["correcte"] == "true"
-                    ],
-                }
-            )
-        # On génère le pdf
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Arial", size=12)
+        print("Nb copies : " + str(nb_copies))
+
+        # On récupère les questions qui ont le ou les tags sélectionnés
+        tags_str = " ".join(tags)
+        # liste des questions pour chaque tag sélectionné
+        questions_list = []
+        for tag in tags:
+            questions = Question.query.filter(Question.tags.like("%" + tag + "%")).all()
+            questions_list.append(questions)
+
+        pdf = canvas.Canvas("test.pdf")
+        bottom_margin = 100
+        top_margin = 100
+
         for i in range(nb_copies):
-            pdf.cell(200, 10, txt="Copie n°" + str(i + 1), ln=1, align="C")
+            pdf.setFont("Helvetica-Bold", 14)
+            pdf.drawString(100, 780, "QCM n°" + str(i + 1))
+            pdf.setFont("Helvetica", 12)
+            pdf.drawString(100, 750, "Nom :")
+            pdf.drawString(100, 730, "Prénom :")
+            pdf.drawString(100, 710, "Date :")
+
+            ens_q = []
+            # Ajoute aléatoirement nb_questions questions à ens_q
             for j in range(nb_questions):
-                question = random.choice(qanda)
-                pdf.cell(200, 10, txt=question["question"], ln=1, align="L")
+                # On choisit un tag au hasard
+                tag = random.choice(tags)
+                # On récupère les questions qui ont ce tag
+                questions = Question.query.filter(
+                    Question.tags.like("%" + tag + "%")
+                ).all()
+                # On choisit une question au hasard
+                question = random.choice(questions)
+                # On ajoute la question à ens_q
+                ens_q.append(question)
+            print("ens_q"+str(len(ens_q)))
+            # On formate les questions et les réponses
+            ens_qanda = []
+            for question in ens_q:
+                ans = question.answers.replace("'", '"')
+                answers = json.loads(ans.replace('""', "'"))
+                ens_qanda.append(
+                    {
+                        "id": question.id,
+                        "question": question.question,
+                        "answers": [item["reponse"] for item in answers],
+                    }
+                )
+            print("ens_qanda"+str(len(ens_qanda)))
+            y = 650
+            # On écrit les questions et les réponses dans le pdf
+            for question in ens_qanda:
+                if y < bottom_margin:
+                    pdf.showPage()
+                    y = A4[1] - top_margin
+                pdf.setFont("Helvetica-Bold", 12)
+                pdf.drawString(
+                    100, y, "Question " + str(ens_qanda.index(question) + 1) + ":"
+                )
+                pdf.setFont("Helvetica", 12)
+                y -= 20
+                pdf.drawString(120, y, question["question"])
+                y -= 20
                 for answer in question["answers"]:
-                    pdf.cell(200, 10, txt=answer, ln=1, align="L")
-                pdf.cell(200, 10, txt="", ln=1, align="L")
-            pdf.cell(200, 10, txt="", ln=1, align="L")
-        
-            pdf.add_page()
-        pdf.output("test.pdf")
+                    pdf.drawString(140, y, answer)
+                    pdf.rect(120, y - 5, 10, 10, fill=0)
+                    y -= 20
+                y -= 10
+
+            pdf.showPage()
+
+        pdf.save()
         return send_file("test.pdf", as_attachment=True)
 
     return render_template("generate_pdf.html", form=form)
