@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- Popper JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static',filename='css/accueil.css')}}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css">
+</head>
+
+<body>
+    <a id="menu" title="Revenir au menu principal" href="{{ url_for('accueil') }}"><i class="fa-solid fa-house-user"></i></a>
+    <div class="container">
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-6">
+                <form action="{{url_for('generate_pdf')}}" method="post">
+                    {{form.hidden_tag()}}
+                    <div class="form-group">
+                        {{ form.tags.label(class="form-label") }}
+                        {{ form.tags(class="form-control") }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.nb_copies.label(class="form-label") }}
+                        {{ form.nb_copies(class="form-control") }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.nb_questions.label(class="form-label") }}
+                        {{ form.nb_questions(class="form-control") }}
+                    </div>
+                    <div class="form-group text-center">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
