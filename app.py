@@ -227,6 +227,9 @@ class PdfCreationForm(FlaskForm):
         validators=[DataRequired()],
         render_kw={"id": "nb_copies", "class": "form-control"},
     )
+    anonymous = BooleanField(
+        "Anonymiser les copies", default=False, render_kw={"class": "form-check-input"}
+    )
     submit = SubmitField(
         "Create PDF", render_kw={"class": "btn btn-success", "id": "submit"}
     )
@@ -956,6 +959,8 @@ def generate_pdf():
         print("Nb questions :" + str(nb_questions))
         nb_copies = form.nb_copies.data
         print("Nb copies : " + str(nb_copies))
+        anonymous = form.anonymous.data
+        print("Anonymous : " + str(anonymous))
 
         # On récupère les questions qui ont le ou les tags sélectionnés
         tags_str = " ".join(tags)
@@ -973,9 +978,15 @@ def generate_pdf():
             pdf.setFont("Helvetica-Bold", 14)
             pdf.drawString(100, 780, "QCM n°" + str(i + 1))
             pdf.setFont("Helvetica", 12)
-            pdf.drawString(100, 750, "Nom :")
-            pdf.drawString(100, 730, "Prénom :")
-            pdf.drawString(100, 710, "Date :")
+            if not anonymous:
+                pdf.drawString(100, 750, "Nom :")
+                pdf.drawString(100, 730, "Prénom :")
+                pdf.drawString(100, 710, "NumEtu :")
+            else:
+                # 6 cases pour le numéro d'anonymat
+                for j in range(6):
+                    pdf.rect(100 + j * 20, 750, 20, 20, fill=0)
+            pdf.drawString(100, 680, "Date :")
 
             ens_q = []
             # Ajoute aléatoirement nb_questions questions à ens_q
